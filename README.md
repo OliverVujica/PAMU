@@ -7,3 +7,6 @@
 
 3. Pokreni aplikaciju:
     - Klikni na **Run** (zelena strelica) **Run 'app'**.
+  
+## Sprint Backlog
+- https://docs.google.com/spreadsheets/d/12z_B39JvilWvy5HiH-WzBf3F9WQ4Rl5tWjYr1A30qzs/edit?usp=sharing
