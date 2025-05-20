@@ -34,6 +34,13 @@
             android:text="Logout"
             android:paddingHorizontal="24dp" />
 
+        <Button
+            android:id="@+id/btnManageUsers"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Upravljaj korisnicima" />
+
+
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

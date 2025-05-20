@@ -24,6 +24,7 @@ class WelcomeActivity : AppCompatActivity() {
 
         welcomeTextView = findViewById(R.id.welcomeTextView)
         logoutBtn = findViewById(R.id.logoutBtn)
+        val btnUsers = findViewById<Button>(R.id.btnManageUsers)
 
         val currentUser = auth.currentUser
 
@@ -42,6 +43,11 @@ class WelcomeActivity : AppCompatActivity() {
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             startActivity(intent)
             finish()
+        }
+
+        btnUsers.setOnClickListener{
+            val intent = Intent(this, UserList::class.java)
+            startActivity(intent)
         }
     }
 }
