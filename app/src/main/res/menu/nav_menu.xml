@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_home"
+        android:title="Početna" />
+    <item
+        android:id="@+id/nav_manage_users"
+        android:title="Upravljaj korisnicima" />
+    <item
+        android:id="@+id/nav_manage_events"
+        android:title="Dodaj događaj" />
+    <item
+        android:id="@+id/nav_logout"
+        android:title="Odjava" />
+</menu>

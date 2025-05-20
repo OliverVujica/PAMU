@@ -71,7 +71,8 @@ class RegisterActivity : AppCompatActivity() {
                                 val user = hashMapOf(
                                     "firstName" to firstName,
                                     "lastName" to lastName,
-                                    "email" to email
+                                    "email" to email,
+                                    "role" to "user"
                                 )
 
                                 userId?.let {
@@ -137,7 +138,8 @@ class RegisterActivity : AppCompatActivity() {
                         val userData = hashMapOf(
                             "firstName" to (user.displayName?.split(" ")?.getOrNull(0) ?: ""),
                             "lastName" to (user.displayName?.split(" ")?.getOrNull(1) ?: ""),
-                            "email" to user.email
+                            "email" to user.email,
+                            "role" to "user"
                         )
 
                         db.collection("users").document(it.uid)
