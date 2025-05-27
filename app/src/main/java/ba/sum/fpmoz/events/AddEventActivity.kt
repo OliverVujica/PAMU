@@ -56,7 +56,6 @@ class AddEventActivity : AppCompatActivity() {
         eventTime = findViewById(R.id.event_time)
         locationSpinner = findViewById(R.id.locationSpinner)
         typeSpinner = findViewById(R.id.typeSpinner)
-        eventDescription = findViewById(R.id.event_description)
         addEventButton = findViewById(R.id.add_event_button)
         addEventTypeButton = findViewById(R.id.addEventTypeButton)
         drawerLayout = findViewById(R.id.drawerLayout)

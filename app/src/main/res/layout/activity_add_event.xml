@@ -109,13 +109,6 @@
             app:layout_constraintTop_toBottomOf="@id/event_type_layout"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/event_description"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Event Description"
-                android:inputType="textMultiLine"
-                android:minLines="3"/>
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.button.MaterialButton

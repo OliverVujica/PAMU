@@ -16,6 +16,8 @@ class EventAdapter(
     class EventViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val eventName: TextView = itemView.findViewById(R.id.event_name)
         val eventDate: TextView? = itemView.findViewById(R.id.event_date)
+        val eventType: TextView? = itemView.findViewById(R.id.event_type)
+        val eventLocation: TextView? = itemView.findViewById(R.id.event_location)
         val deleteButton: Button? = itemView.findViewById(R.id.btnDelete)
     }
 
@@ -28,7 +30,9 @@ class EventAdapter(
     override fun onBindViewHolder(holder: EventViewHolder, position: Int) {
         val event = events[position]
         holder.eventName.text = event.name
-        holder.eventDate?.text = "${event.date}\n${event.typeName}\n${event.locationName}"
+        holder.eventDate?.text = event.date
+        holder.eventType?.text = event.typeName
+        holder.eventLocation?.text = event.locationName
         holder.deleteButton?.setOnClickListener {
             onDeleteClick(event.id)
         }
