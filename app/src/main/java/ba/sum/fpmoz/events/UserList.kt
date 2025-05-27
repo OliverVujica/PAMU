@@ -1,22 +1,26 @@
 package ba.sum.fpmoz.events
 
 import android.os.Bundle
-import android.widget.Button
-import android.widget.LinearLayout
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Button
+import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 
 class UserList : AppCompatActivity() {
 
     private lateinit var auth: FirebaseAuth
     private lateinit var db: FirebaseFirestore
-    private lateinit var userListLayout: LinearLayout
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var userAdapter: UserAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,7 +29,11 @@ class UserList : AppCompatActivity() {
 
         auth = FirebaseAuth.getInstance()
         db = FirebaseFirestore.getInstance()
-        userListLayout = findViewById(R.id.userListLayout)
+        recyclerView = findViewById(R.id.user_list)
+
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        userAdapter = UserAdapter(emptyList(), onDeleteClick = { userId -> deleteUser(userId) }, onUpdateRoleClick = { userId, role -> showUpdateRoleDialog(userId, role) })
+        recyclerView.adapter = userAdapter
 
         checkAdminStatus()
     }
@@ -63,32 +71,16 @@ class UserList : AppCompatActivity() {
     private fun loadUsers() {
         db.collection("users").get()
             .addOnSuccessListener { result ->
-                userListLayout.removeAllViews()
-
-                for (document in result) {
-                    val email = document.getString("email") ?: continue
-                    val firstName = document.getString("firstName") ?: ""
-                    val lastName = document.getString("lastName") ?: ""
-                    val role = document.getString("role") ?: "user"
-                    val userId = document.id
-
-                    val userView = layoutInflater.inflate(R.layout.item_user, null)
-                    val emailText = userView.findViewById<TextView>(R.id.textEmail)
-                    val deleteButton = userView.findViewById<Button>(R.id.btnDelete)
-                    val updateRoleButton = userView.findViewById<Button>(R.id.btnUpdateRole)
-
-                    emailText.text = "$firstName $lastName\n$email\nRole: $role"
-
-                    deleteButton.setOnClickListener {
-                        deleteUser(userId)
-                    }
-
-                    updateRoleButton.setOnClickListener {
-                        showUpdateRoleDialog(userId, role)
-                    }
-
-                    userListLayout.addView(userView)
+                val users = result.map { document ->
+                    User(
+                        id = document.id,
+                        email = document.getString("email") ?: "",
+                        firstName = document.getString("firstName") ?: "",
+                        lastName = document.getString("lastName") ?: "",
+                        role = document.getString("role") ?: "user"
+                    )
                 }
+                userAdapter.updateUsers(users)
             }
             .addOnFailureListener {
                 Toast.makeText(this, "Error loading users: ${it.message}", Toast.LENGTH_SHORT).show()
@@ -98,7 +90,6 @@ class UserList : AppCompatActivity() {
     private fun deleteUser(userId: String) {
         val currentUser = auth.currentUser
 
-        // Prevent admin from deleting themselves
         if (userId == currentUser?.uid) {
             Toast.makeText(this, "You cannot delete your own account", Toast.LENGTH_SHORT).show()
             return
@@ -117,7 +108,6 @@ class UserList : AppCompatActivity() {
     private fun showUpdateRoleDialog(userId: String, currentRole: String) {
         val currentUser = auth.currentUser
 
-        // Prevent admin from changing their own role
         if (userId == currentUser?.uid) {
             Toast.makeText(this, "You cannot change your own role", Toast.LENGTH_SHORT).show()
             return
@@ -126,7 +116,7 @@ class UserList : AppCompatActivity() {
         val roles = arrayOf("user", "admin")
         var selectedRole = if (currentRole == "admin") 1 else 0
 
-        val builder = androidx.appcompat.app.AlertDialog.Builder(this)
+        val builder = AlertDialog.Builder(this)
         builder.setTitle("Update User Role")
             .setSingleChoiceItems(roles, selectedRole) { _, which ->
                 selectedRole = which
@@ -147,48 +137,55 @@ class UserList : AppCompatActivity() {
             .update("role", newRole)
             .addOnSuccessListener {
                 Toast.makeText(this, "User role updated successfully", Toast.LENGTH_SHORT).show()
-                loadUsers() // Refresh the list
+                loadUsers()
             }
             .addOnFailureListener {
                 Toast.makeText(this, "Error updating role: ${it.message}", Toast.LENGTH_SHORT).show()
             }
     }
 
-    private fun showUpdatePasswordDialog(userId: String, userEmail: String) {
-        val passwordEditText = android.widget.EditText(this)
-        passwordEditText.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
-        passwordEditText.hint = "New password"
+    data class User(
+        val id: String,
+        val email: String,
+        val firstName: String,
+        val lastName: String,
+        val role: String
+    )
 
-        val layout = android.widget.LinearLayout(this)
-        layout.orientation = android.widget.LinearLayout.VERTICAL
-        layout.setPadding(50, 30, 50, 30)
-        layout.addView(passwordEditText)
+    class UserAdapter(
+        private var users: List<User>,
+        private val onDeleteClick: (String) -> Unit,
+        private val onUpdateRoleClick: (String, String) -> Unit
+    ) : RecyclerView.Adapter<UserAdapter.UserViewHolder>() {
 
-        val builder = androidx.appcompat.app.AlertDialog.Builder(this)
-        builder.setTitle("Update Password for $userEmail")
-            .setView(layout)
-            .setPositiveButton("Update") { dialog, _ ->
-                val newPassword = passwordEditText.text.toString()
-                if (newPassword.length < 6) {
-                    Toast.makeText(this, "Password must be at least 6 characters", Toast.LENGTH_SHORT).show()
-                } else {
-                    updateUserPassword(userId, userEmail, newPassword)
-                    dialog.dismiss()
-                }
-            }
-            .setNegativeButton("Cancel") { dialog, _ ->
-                dialog.dismiss()
-            }
-        builder.show()
-    }
+        class UserViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+            val usernameText: TextView = itemView.findViewById(R.id.username)
+            val deleteButton: Button = itemView.findViewById(R.id.delete_button)
+            val updateRoleButton: Button = itemView.findViewById(R.id.update_role_button)
+        }
 
-    private fun updateUserPassword(userId: String, email: String, newPassword: String) {
-        auth.sendPasswordResetEmail(email)
-            .addOnSuccessListener {
-                Toast.makeText(this, "Password reset link sent to $email", Toast.LENGTH_LONG).show()
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UserViewHolder {
+            val view = LayoutInflater.from(parent.context)
+                .inflate(R.layout.item_user, parent, false)
+            return UserViewHolder(view)
+        }
+
+        override fun onBindViewHolder(holder: UserViewHolder, position: Int) {
+            val user = users[position]
+            holder.usernameText.text = "${user.firstName} ${user.lastName}\n${user.email}\nRole: ${user.role}"
+            holder.deleteButton.setOnClickListener {
+                onDeleteClick(user.id)
             }
-            .addOnFailureListener { e ->
-                Toast.makeText(this, "Failed to send reset email: ${e.message}", Toast.LENGTH_SHORT).show()
+            holder.updateRoleButton.setOnClickListener {
+                onUpdateRoleClick(user.id, user.role)
             }
+        }
+
+        override fun getItemCount(): Int = users.size
+
+        fun updateUsers(newUsers: List<User>) {
+            users = newUsers
+            notifyDataSetChanged()
+        }
     }
 }

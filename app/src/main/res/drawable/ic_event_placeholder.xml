@@ -1,0 +1,35 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="120dp"
+    android:viewportWidth="200"
+    android:viewportHeight="120">
+
+    <path
+        android:fillColor="#FCE4EC"
+        android:pathData="M0,0 L200,0 L200,120 L0,120 Z"/>
+
+    <path
+        android:fillColor="#E91E63"
+        android:pathData="M70,25 C70,22 72,20 75,20 C78,20 80,22 80,25 C80,28 78,30 75,30 C72,30 70,28 70,25 Z"/>
+
+    <path
+        android:fillColor="#E91E63"
+        android:pathData="M75,30 L77,30 L77,50 L75,50 Z"/>
+
+    <path
+        android:fillColor="#E91E63"
+        android:pathData="M110,35 C110,32 112,30 115,30 C118,30 120,32 120,35 C120,38 118,40 115,40 C112,40 110,38 110,35 Z"/>
+
+    <path
+        android:fillColor="#E91E63"
+        android:pathData="M115,40 L117,40 L117,60 L115,60 Z"/>
+
+    <!-- Microphone -->
+    <path
+        android:fillColor="#AD1457"
+        android:pathData="M95,65 C95,60 97,55 100,55 C103,55 105,60 105,65 L105,75 C105,80 103,85 100,85 C97,85 95,80 95,75 Z"/>
+
+    <path
+        android:fillColor="#AD1457"
+        android:pathData="M100,85 L100,95 M95,95 L105,95"/>
+</vector>

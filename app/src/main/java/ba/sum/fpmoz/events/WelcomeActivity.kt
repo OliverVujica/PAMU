@@ -38,7 +38,7 @@ class WelcomeActivity : AppCompatActivity() {
         welcomeTextView = findViewById(R.id.welcomeTextView)
         drawerLayout = findViewById(R.id.drawerLayout)
         navigationView = findViewById(R.id.navigationView)
-        recyclerView = findViewById(R.id.eventRecyclerView)
+        recyclerView = findViewById(R.id.event_list)
 
         recyclerView.layoutManager = LinearLayoutManager(this)
         eventAdapter = EventAdapter(emptyList(), R.layout.item_event_welcome) { /* No delete action in WelcomeActivity */ }
@@ -55,11 +55,11 @@ class WelcomeActivity : AppCompatActivity() {
             when (menuItem.itemId) {
                 R.id.nav_home -> {
                 }
-                R.id.nav_manage_users -> {
+                R.id.nav_user_list -> {
                     val intent = Intent(this, UserList::class.java)
                     startActivity(intent)
                 }
-                R.id.nav_manage_events -> {
+                R.id.nav_add_event -> {
                     val intent = Intent(this, AddEventActivity::class.java)
                     startActivity(intent)
                 }
@@ -82,8 +82,8 @@ class WelcomeActivity : AppCompatActivity() {
             checkUserRole()
         } else {
             welcomeTextView.text = "Welcome to our app!"
-            navigationView.menu.findItem(R.id.nav_manage_users).isVisible = false
-            navigationView.menu.findItem(R.id.nav_manage_events).isVisible = false
+            navigationView.menu.findItem(R.id.nav_user_list).isVisible = false
+            navigationView.menu.findItem(R.id.nav_add_event).isVisible = false
             loadEvents()
         }
     }
@@ -107,27 +107,27 @@ class WelcomeActivity : AppCompatActivity() {
                     if (document != null && document.exists()) {
                         val role = document.getString("role")
                         if (role == "admin") {
-                            navigationView.menu.findItem(R.id.nav_manage_users).isVisible = true
-                            navigationView.menu.findItem(R.id.nav_manage_events).isVisible = true
+                            navigationView.menu.findItem(R.id.nav_user_list).isVisible = true
+                            navigationView.menu.findItem(R.id.nav_add_event).isVisible = true
                         } else {
-                            navigationView.menu.findItem(R.id.nav_manage_users).isVisible = false
-                            navigationView.menu.findItem(R.id.nav_manage_events).isVisible = false
+                            navigationView.menu.findItem(R.id.nav_user_list).isVisible = false
+                            navigationView.menu.findItem(R.id.nav_add_event).isVisible = false
                         }
                     } else {
-                        navigationView.menu.findItem(R.id.nav_manage_users).isVisible = false
-                        navigationView.menu.findItem(R.id.nav_manage_events).isVisible = false
+                        navigationView.menu.findItem(R.id.nav_user_list).isVisible = false
+                        navigationView.menu.findItem(R.id.nav_add_event).isVisible = false
                     }
                     loadEvents()
                 }
                 .addOnFailureListener {
-                    navigationView.menu.findItem(R.id.nav_manage_users).isVisible = false
-                    navigationView.menu.findItem(R.id.nav_manage_events).isVisible = false
+                    navigationView.menu.findItem(R.id.nav_user_list).isVisible = false
+                    navigationView.menu.findItem(R.id.nav_add_event).isVisible = false
                     Toast.makeText(this, "Failed to check user role", Toast.LENGTH_SHORT).show()
                     loadEvents()
                 }
         } ?: run {
-            navigationView.menu.findItem(R.id.nav_manage_users).isVisible = false
-            navigationView.menu.findItem(R.id.nav_manage_events).isVisible = false
+            navigationView.menu.findItem(R.id.nav_user_list).isVisible = false
+            navigationView.menu.findItem(R.id.nav_add_event).isVisible = false
             loadEvents()
         }
     }
@@ -146,7 +146,7 @@ class WelcomeActivity : AppCompatActivity() {
                         locationName = document.getString("locationName") ?: ""
                     )
                 }
-                eventAdapter.updateEvents(events.sortedBy { it.date }) // Optional: Sort by date
+                eventAdapter.updateEvents(events.sortedBy { it.date })
             }
             .addOnFailureListener {
                 Toast.makeText(this, "Error loading events: ${it.message}", Toast.LENGTH_SHORT).show()

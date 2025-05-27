@@ -1,6 +1,7 @@
 package ba.sum.fpmoz.events
 
 import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.content.Intent
 import android.os.Bundle
 import android.view.MenuItem
@@ -27,10 +28,12 @@ class AddEventActivity : AppCompatActivity() {
 
     private lateinit var db: FirebaseFirestore
     private lateinit var auth: FirebaseAuth
-    private lateinit var nameEditText: EditText
-    private lateinit var dateEditText: EditText
-    private lateinit var typeSpinner: Spinner
+    private lateinit var eventName: EditText
+    private lateinit var eventDate: EditText
+    private lateinit var eventTime: EditText
     private lateinit var locationSpinner: Spinner
+    private lateinit var typeSpinner: Spinner
+    private lateinit var eventDescription: EditText
     private lateinit var addEventButton: Button
     private lateinit var addEventTypeButton: Button
     private lateinit var drawerLayout: DrawerLayout
@@ -48,15 +51,17 @@ class AddEventActivity : AppCompatActivity() {
         db = FirebaseFirestore.getInstance()
         auth = FirebaseAuth.getInstance()
 
-        nameEditText = findViewById(R.id.nameEditText)
-        dateEditText = findViewById(R.id.dateEditText)
-        typeSpinner = findViewById(R.id.typeSpinner)
+        eventName = findViewById(R.id.event_name)
+        eventDate = findViewById(R.id.event_date)
+        eventTime = findViewById(R.id.event_time)
         locationSpinner = findViewById(R.id.locationSpinner)
-        addEventButton = findViewById(R.id.addEventButton)
+        typeSpinner = findViewById(R.id.typeSpinner)
+        eventDescription = findViewById(R.id.event_description)
+        addEventButton = findViewById(R.id.add_event_button)
         addEventTypeButton = findViewById(R.id.addEventTypeButton)
         drawerLayout = findViewById(R.id.drawerLayout)
         navigationView = findViewById(R.id.navigationView)
-        recyclerView = findViewById(R.id.eventRecyclerView)
+        recyclerView = findViewById(R.id.event_list)
 
         recyclerView.layoutManager = LinearLayoutManager(this)
         eventAdapter = EventAdapter(emptyList(), R.layout.item_event, onDeleteClick = { eventId ->
@@ -64,7 +69,7 @@ class AddEventActivity : AppCompatActivity() {
         })
         recyclerView.adapter = eventAdapter
 
-        dateEditText.setOnClickListener {
+        eventDate.setOnClickListener {
             val calendar = Calendar.getInstance()
             val year = calendar.get(Calendar.YEAR)
             val month = calendar.get(Calendar.MONTH)
@@ -74,13 +79,31 @@ class AddEventActivity : AppCompatActivity() {
                 this,
                 { _, selectedYear, selectedMonth, selectedDay ->
                     val formattedDate = String.format("%04d-%02d-%02d", selectedYear, selectedMonth + 1, selectedDay)
-                    dateEditText.setText(formattedDate)
+                    eventDate.setText(formattedDate)
                 },
                 year,
                 month,
                 day
             )
             datePickerDialog.show()
+        }
+
+        eventTime.setOnClickListener {
+            val calendar = Calendar.getInstance()
+            val hour = calendar.get(Calendar.HOUR_OF_DAY)
+            val minute = calendar.get(Calendar.MINUTE)
+
+            val timePickerDialog = TimePickerDialog(
+                this,
+                { _, selectedHour, selectedMinute ->
+                    val formattedTime = String.format("%02d:%02d", selectedHour, selectedMinute)
+                    eventTime.setText(formattedTime)
+                },
+                hour,
+                minute,
+                true
+            )
+            timePickerDialog.show()
         }
 
         val toggle = ActionBarDrawerToggle(
@@ -96,11 +119,11 @@ class AddEventActivity : AppCompatActivity() {
                     val intent = Intent(this, WelcomeActivity::class.java)
                     startActivity(intent)
                 }
-                R.id.nav_manage_users -> {
+                R.id.nav_user_list -> {
                     val intent = Intent(this, UserList::class.java)
                     startActivity(intent)
                 }
-                R.id.nav_manage_events -> {
+                R.id.nav_add_event -> {
                 }
                 R.id.nav_logout -> {
                     auth.signOut()
@@ -120,12 +143,14 @@ class AddEventActivity : AppCompatActivity() {
         loadLocations()
 
         addEventButton.setOnClickListener {
-            val name = nameEditText.text.toString().trim()
-            val date = dateEditText.text.toString().trim()
+            val name = eventName.text.toString().trim()
+            val date = eventDate.text.toString().trim()
+            val time = eventTime.text.toString().trim()
             val typePosition = typeSpinner.selectedItemPosition
             val locationPosition = locationSpinner.selectedItemPosition
+            val description = eventDescription.text.toString().trim()
 
-            if (name.isEmpty() || date.isEmpty() || typePosition == -1 || locationPosition == -1 || eventTypes.isEmpty() || locations.isEmpty()) {
+            if (name.isEmpty() || date.isEmpty() || time.isEmpty() || typePosition == -1 || locationPosition == -1 || eventTypes.isEmpty() || locations.isEmpty()) {
                 Toast.makeText(this, "All fields are required", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
@@ -135,20 +160,23 @@ class AddEventActivity : AppCompatActivity() {
 
             val event = hashMapOf(
                 "name" to name,
-                "date" to date,
+                "date" to "$date $time",
                 "typeId" to typePair.first,
                 "typeName" to typePair.second,
                 "locationId" to locationPair.first,
-                "locationName" to locationPair.second
+                "locationName" to locationPair.second,
+                "description" to description
             )
 
             db.collection("events").add(event)
                 .addOnSuccessListener {
                     Toast.makeText(this, "Event added successfully", Toast.LENGTH_SHORT).show()
-                    nameEditText.text.clear()
-                    dateEditText.text.clear()
+                    eventName.text.clear()
+                    eventDate.text.clear()
+                    eventTime.text.clear()
                     typeSpinner.setSelection(0)
                     locationSpinner.setSelection(0)
+                    eventDescription.text.clear()
                     loadEvents()
                 }
                 .addOnFailureListener {
@@ -185,28 +213,28 @@ class AddEventActivity : AppCompatActivity() {
                 if (document != null && document.exists()) {
                     val role = document.getString("role")
                     if (role == "admin") {
-                        navigationView.menu.findItem(R.id.nav_manage_users).isVisible = true
-                        navigationView.menu.findItem(R.id.nav_manage_events).isVisible = true
+                        navigationView.menu.findItem(R.id.nav_user_list).isVisible = true
+                        navigationView.menu.findItem(R.id.nav_add_event).isVisible = true
                         addEventTypeButton.isVisible = true
                         loadEvents()
                     } else {
-                        navigationView.menu.findItem(R.id.nav_manage_users).isVisible = false
-                        navigationView.menu.findItem(R.id.nav_manage_events).isVisible = false
+                        navigationView.menu.findItem(R.id.nav_user_list).isVisible = false
+                        navigationView.menu.findItem(R.id.nav_add_event).isVisible = false
                         addEventTypeButton.isVisible = false
                         Toast.makeText(this, "Access denied: Admin rights required", Toast.LENGTH_SHORT).show()
                         finish()
                     }
                 } else {
-                    navigationView.menu.findItem(R.id.nav_manage_users).isVisible = false
-                    navigationView.menu.findItem(R.id.nav_manage_events).isVisible = false
+                    navigationView.menu.findItem(R.id.nav_user_list).isVisible = false
+                    navigationView.menu.findItem(R.id.nav_add_event).isVisible = false
                     addEventTypeButton.isVisible = false
                     Toast.makeText(this, "User data not found", Toast.LENGTH_SHORT).show()
                     finish()
                 }
             }
             .addOnFailureListener {
-                navigationView.menu.findItem(R.id.nav_manage_users).isVisible = false
-                navigationView.menu.findItem(R.id.nav_manage_events).isVisible = false
+                navigationView.menu.findItem(R.id.nav_user_list).isVisible = false
+                navigationView.menu.findItem(R.id.nav_add_event).isVisible = false
                 addEventTypeButton.isVisible = false
                 Toast.makeText(this, "Failed to check user role", Toast.LENGTH_SHORT).show()
                 finish()
@@ -307,7 +335,7 @@ class AddEventActivity : AppCompatActivity() {
                         typeId = document.getString("typeId") ?: "",
                         typeName = document.getString("typeName") ?: "",
                         locationId = document.getString("locationId") ?: "",
-                        locationName = document.getString("locationName") ?: ""
+                        locationName = document.getString("locationName") ?: "",
                     )
                 }
                 eventAdapter.updateEvents(events.sortedBy { it.date })

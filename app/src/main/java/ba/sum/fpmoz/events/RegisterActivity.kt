@@ -21,14 +21,13 @@ class RegisterActivity : AppCompatActivity() {
     private lateinit var auth: FirebaseAuth
     private lateinit var db: FirebaseFirestore
     private lateinit var googleSignInClient: GoogleSignInClient
-    private lateinit var registerNameTxt: EditText
-    private lateinit var registerLastnameTxt: EditText
-    private lateinit var registerEmailTxt: EditText
-    private lateinit var registerPasswordTxt: EditText
-    private lateinit var registerCnfPasswordTxt: EditText
-    private lateinit var registerSubmitBtn: Button
+    private lateinit var username: EditText
+    private lateinit var email: EditText
+    private lateinit var password: EditText
+    private lateinit var confirmPassword: EditText
+    private lateinit var registerButton: Button
     private lateinit var googleSignInBtn: Button
-    private lateinit var open_goToLogin: TextView
+    private lateinit var goToLogin: TextView
 
     private val RC_SIGN_IN = 100
 
@@ -45,33 +44,30 @@ class RegisterActivity : AppCompatActivity() {
             .build()
         googleSignInClient = GoogleSignIn.getClient(this, gso)
 
-        registerNameTxt = findViewById(R.id.registerNameTxt)
-        registerLastnameTxt = findViewById(R.id.registerLastnameTxt)
-        registerEmailTxt = findViewById(R.id.registerEmailTxt)
-        registerPasswordTxt = findViewById(R.id.registerPasswordTxt)
-        registerCnfPasswordTxt = findViewById(R.id.registerCnfPasswordTxt)
-        registerSubmitBtn = findViewById(R.id.registerSubmitBtn)
+        username = findViewById(R.id.username)
+        email = findViewById(R.id.email)
+        password = findViewById(R.id.password)
+        confirmPassword = findViewById(R.id.confirm_password)
+        registerButton = findViewById(R.id.register_button)
         googleSignInBtn = findViewById(R.id.googleSignInBtn)
-        open_goToLogin = findViewById(R.id.goToLogin)
+        goToLogin = findViewById(R.id.goToLogin)
 
-        registerSubmitBtn.setOnClickListener {
-            val firstName = registerNameTxt.text.toString()
-            val lastName = registerLastnameTxt.text.toString()
-            val email = registerEmailTxt.text.toString()
-            val password = registerPasswordTxt.text.toString()
-            val cnfPassword = registerCnfPasswordTxt.text.toString()
+        registerButton.setOnClickListener {
+            val firstName = username.text.toString().trim()
+            val emailText = email.text.toString().trim()
+            val passwordText = password.text.toString().trim()
+            val confirmPasswordText = confirmPassword.text.toString().trim()
 
-            if (firstName.isNotEmpty() && lastName.isNotEmpty() && email.isNotEmpty()
-                && password.isNotEmpty() && cnfPassword.isNotEmpty()) {
-                if (password == cnfPassword) {
-                    auth.createUserWithEmailAndPassword(email, password)
+            if (firstName.isNotEmpty() && emailText.isNotEmpty() && passwordText.isNotEmpty() && confirmPasswordText.isNotEmpty()) {
+                if (passwordText == confirmPasswordText) {
+                    auth.createUserWithEmailAndPassword(emailText, passwordText)
                         .addOnCompleteListener { task ->
                             if (task.isSuccessful) {
                                 val userId = auth.currentUser?.uid
                                 val user = hashMapOf(
                                     "firstName" to firstName,
-                                    "lastName" to lastName,
-                                    "email" to email,
+                                    "lastName" to "", // Last name not collected in new UI
+                                    "email" to emailText,
                                     "role" to "user"
                                 )
 
@@ -108,7 +104,7 @@ class RegisterActivity : AppCompatActivity() {
             }
         }
 
-        open_goToLogin.setOnClickListener {
+        goToLogin.setOnClickListener {
             val intent = Intent(this, LoginActivity::class.java)
             startActivity(intent)
         }

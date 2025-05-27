@@ -22,9 +22,9 @@ class LoginActivity : AppCompatActivity() {
 
     private lateinit var auth: FirebaseAuth
     private lateinit var googleSignInClient: GoogleSignInClient
-    private lateinit var loginEmailTxt: EditText
-    private lateinit var loginPasswordTxt: EditText
-    private lateinit var loginBtn: Button
+    private lateinit var username: EditText
+    private lateinit var password: EditText
+    private lateinit var loginButton: Button
     private lateinit var googleSignInBtn: Button
     private lateinit var registerRedirectTxt: TextView
     private lateinit var forgotPasswordTxt: TextView
@@ -49,19 +49,19 @@ class LoginActivity : AppCompatActivity() {
             .build()
         googleSignInClient = GoogleSignIn.getClient(this, gso)
 
-        loginEmailTxt = findViewById(R.id.loginEmailTxt)
-        loginPasswordTxt = findViewById(R.id.loginPasswordTxt)
-        loginBtn = findViewById(R.id.loginBtn)
+        username = findViewById(R.id.username)
+        password = findViewById(R.id.password)
+        loginButton = findViewById(R.id.login_button)
         googleSignInBtn = findViewById(R.id.googleSignInBtn)
         registerRedirectTxt = findViewById(R.id.registerRedirectTxt)
         forgotPasswordTxt = findViewById(R.id.forgotPasswordTxt)
 
-        loginBtn.setOnClickListener {
-            val email = loginEmailTxt.text.toString().trim()
-            val password = loginPasswordTxt.text.toString().trim()
+        loginButton.setOnClickListener {
+            val email = username.text.toString().trim()
+            val passwordText = password.text.toString().trim()
 
-            if (validateInput(email, password)) {
-                loginUser(email, password)
+            if (validateInput(email, passwordText)) {
+                loginUser(email, passwordText)
             }
         }
 
@@ -75,7 +75,7 @@ class LoginActivity : AppCompatActivity() {
         }
 
         forgotPasswordTxt.setOnClickListener {
-            val email = loginEmailTxt.text.toString().trim()
+            val email = username.text.toString().trim()
             if (email.isNotEmpty() && Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
                 auth.sendPasswordResetEmail(email)
                     .addOnCompleteListener { task ->
@@ -86,8 +86,8 @@ class LoginActivity : AppCompatActivity() {
                         }
                     }
             } else {
-                loginEmailTxt.error = "Please enter a valid email"
-                loginEmailTxt.requestFocus()
+                username.error = "Please enter a valid email"
+                username.requestFocus()
             }
         }
     }
@@ -102,26 +102,26 @@ class LoginActivity : AppCompatActivity() {
 
     private fun validateInput(email: String, password: String): Boolean {
         if (email.isEmpty()) {
-            loginEmailTxt.error = "Email is required"
-            loginEmailTxt.requestFocus()
+            username.error = "Email is required"
+            username.requestFocus()
             return false
         }
 
         if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            loginEmailTxt.error = "Provide a valid email"
-            loginEmailTxt.requestFocus()
+            username.error = "Provide a valid email"
+            username.requestFocus()
             return false
         }
 
         if (password.isEmpty()) {
-            loginPasswordTxt.error = "Password is required"
-            loginPasswordTxt.requestFocus()
+            this.password.error = "Password is required"
+            this.password.requestFocus()
             return false
         }
 
         if (password.length < 6) {
-            loginPasswordTxt.error = "Password must be at least 6 characters"
-            loginPasswordTxt.requestFocus()
+            this.password.error = "Password must be at least 6 characters"
+            this.password.requestFocus()
             return false
         }
 
