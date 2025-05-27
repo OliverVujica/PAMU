@@ -26,7 +26,7 @@ class EventAdapter(
 
     override fun onBindViewHolder(holder: EventViewHolder, position: Int) {
         val event = events[position]
-        holder.eventText.text = "${event.name}\n${event.date}\n${event.type}\n${event.location}"
+        holder.eventText.text = "${event.name}\n${event.date}\n${event.typeName}\n${event.locationName}"
         holder.deleteButton?.setOnClickListener {
             onDeleteClick(event.id)
         }

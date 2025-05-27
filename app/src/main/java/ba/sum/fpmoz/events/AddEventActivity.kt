@@ -4,13 +4,16 @@ import android.app.DatePickerDialog
 import android.content.Intent
 import android.os.Bundle
 import android.view.MenuItem
+import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
+import android.widget.Spinner
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.GravityCompat
+import androidx.core.view.isVisible
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -26,13 +29,16 @@ class AddEventActivity : AppCompatActivity() {
     private lateinit var auth: FirebaseAuth
     private lateinit var nameEditText: EditText
     private lateinit var dateEditText: EditText
-    private lateinit var typeEditText: EditText
-    private lateinit var locationEditText: EditText
+    private lateinit var typeSpinner: Spinner
+    private lateinit var locationSpinner: Spinner
     private lateinit var addEventButton: Button
+    private lateinit var addEventTypeButton: Button
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var navigationView: NavigationView
     private lateinit var recyclerView: RecyclerView
     private lateinit var eventAdapter: EventAdapter
+    private var eventTypes: List<Pair<String, String>> = emptyList() // (id, name)
+    private var locations: List<Pair<String, String>> = emptyList() // (id, name)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,9 +50,10 @@ class AddEventActivity : AppCompatActivity() {
 
         nameEditText = findViewById(R.id.nameEditText)
         dateEditText = findViewById(R.id.dateEditText)
-        typeEditText = findViewById(R.id.typeEditText)
-        locationEditText = findViewById(R.id.locationEditText)
+        typeSpinner = findViewById(R.id.typeSpinner)
+        locationSpinner = findViewById(R.id.locationSpinner)
         addEventButton = findViewById(R.id.addEventButton)
+        addEventTypeButton = findViewById(R.id.addEventTypeButton)
         drawerLayout = findViewById(R.id.drawerLayout)
         navigationView = findViewById(R.id.navigationView)
         recyclerView = findViewById(R.id.eventRecyclerView)
@@ -109,23 +116,30 @@ class AddEventActivity : AppCompatActivity() {
         }
 
         checkUserRole()
+        loadEventTypes()
+        loadLocations()
 
         addEventButton.setOnClickListener {
             val name = nameEditText.text.toString().trim()
             val date = dateEditText.text.toString().trim()
-            val type = typeEditText.text.toString().trim()
-            val location = locationEditText.text.toString().trim()
+            val typePosition = typeSpinner.selectedItemPosition
+            val locationPosition = locationSpinner.selectedItemPosition
 
-            if (name.isEmpty() || date.isEmpty() || type.isEmpty() || location.isEmpty()) {
+            if (name.isEmpty() || date.isEmpty() || typePosition == -1 || locationPosition == -1 || eventTypes.isEmpty() || locations.isEmpty()) {
                 Toast.makeText(this, "All fields are required", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
+            val typePair = eventTypes[typePosition]
+            val locationPair = locations[locationPosition]
+
             val event = hashMapOf(
                 "name" to name,
                 "date" to date,
-                "type" to type,
-                "location" to location
+                "typeId" to typePair.first,
+                "typeName" to typePair.second,
+                "locationId" to locationPair.first,
+                "locationName" to locationPair.second
             )
 
             db.collection("events").add(event)
@@ -133,13 +147,17 @@ class AddEventActivity : AppCompatActivity() {
                     Toast.makeText(this, "Event added successfully", Toast.LENGTH_SHORT).show()
                     nameEditText.text.clear()
                     dateEditText.text.clear()
-                    typeEditText.text.clear()
-                    locationEditText.text.clear()
+                    typeSpinner.setSelection(0)
+                    locationSpinner.setSelection(0)
                     loadEvents()
                 }
                 .addOnFailureListener {
                     Toast.makeText(this, "Error adding event: ${it.message}", Toast.LENGTH_SHORT).show()
                 }
+        }
+
+        addEventTypeButton.setOnClickListener {
+            showAddEventTypeDialog()
         }
     }
 
@@ -169,16 +187,19 @@ class AddEventActivity : AppCompatActivity() {
                     if (role == "admin") {
                         navigationView.menu.findItem(R.id.nav_manage_users).isVisible = true
                         navigationView.menu.findItem(R.id.nav_manage_events).isVisible = true
+                        addEventTypeButton.isVisible = true
                         loadEvents()
                     } else {
                         navigationView.menu.findItem(R.id.nav_manage_users).isVisible = false
                         navigationView.menu.findItem(R.id.nav_manage_events).isVisible = false
+                        addEventTypeButton.isVisible = false
                         Toast.makeText(this, "Access denied: Admin rights required", Toast.LENGTH_SHORT).show()
                         finish()
                     }
                 } else {
                     navigationView.menu.findItem(R.id.nav_manage_users).isVisible = false
                     navigationView.menu.findItem(R.id.nav_manage_events).isVisible = false
+                    addEventTypeButton.isVisible = false
                     Toast.makeText(this, "User data not found", Toast.LENGTH_SHORT).show()
                     finish()
                 }
@@ -186,8 +207,92 @@ class AddEventActivity : AppCompatActivity() {
             .addOnFailureListener {
                 navigationView.menu.findItem(R.id.nav_manage_users).isVisible = false
                 navigationView.menu.findItem(R.id.nav_manage_events).isVisible = false
+                addEventTypeButton.isVisible = false
                 Toast.makeText(this, "Failed to check user role", Toast.LENGTH_SHORT).show()
                 finish()
+            }
+    }
+
+    private fun loadEventTypes() {
+        db.collection("event_types").get()
+            .addOnSuccessListener { result ->
+                eventTypes = result.map { document ->
+                    Pair(document.id, document.getString("name") ?: "")
+                }
+                val adapter = ArrayAdapter(
+                    this,
+                    android.R.layout.simple_spinner_item,
+                    eventTypes.map { it.second }
+                )
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                typeSpinner.adapter = adapter
+                if (eventTypes.isEmpty()) {
+                    Toast.makeText(this, "No event types available", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .addOnFailureListener {
+                Toast.makeText(this, "Error loading event types: ${it.message}", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    private fun loadLocations() {
+        db.collection("locations").get()
+            .addOnSuccessListener { result ->
+                locations = result.map { document ->
+                    Pair(document.id, document.getString("name") ?: "")
+                }
+                val adapter = ArrayAdapter(
+                    this,
+                    android.R.layout.simple_spinner_item,
+                    locations.map { it.second }
+                )
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                locationSpinner.adapter = adapter
+                if (locations.isEmpty()) {
+                    Toast.makeText(this, "No locations available", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .addOnFailureListener {
+                Toast.makeText(this, "Error loading locations: ${it.message}", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    private fun showAddEventTypeDialog() {
+        val editText = android.widget.EditText(this)
+        editText.hint = "Enter new event type"
+
+        val layout = android.widget.LinearLayout(this)
+        layout.orientation = android.widget.LinearLayout.VERTICAL
+        layout.setPadding(50, 30, 50, 30)
+        layout.addView(editText)
+
+        val builder = androidx.appcompat.app.AlertDialog.Builder(this)
+        builder.setTitle("Add New Event Type")
+            .setView(layout)
+            .setPositiveButton("Add") { dialog, _ ->
+                val newType = editText.text.toString().trim()
+                if (newType.isEmpty()) {
+                    Toast.makeText(this, "Event type cannot be empty", Toast.LENGTH_SHORT).show()
+                } else {
+                    addEventType(newType)
+                    dialog.dismiss()
+                }
+            }
+            .setNegativeButton("Cancel") { dialog, _ ->
+                dialog.dismiss()
+            }
+        builder.show()
+    }
+
+    private fun addEventType(typeName: String) {
+        val eventType = hashMapOf("name" to typeName)
+        db.collection("event_types").add(eventType)
+            .addOnSuccessListener {
+                Toast.makeText(this, "Event type added successfully", Toast.LENGTH_SHORT).show()
+                loadEventTypes()
+            }
+            .addOnFailureListener {
+                Toast.makeText(this, "Error adding event type: ${it.message}", Toast.LENGTH_SHORT).show()
             }
     }
 
@@ -199,11 +304,13 @@ class AddEventActivity : AppCompatActivity() {
                         id = document.id,
                         name = document.getString("name") ?: "",
                         date = document.getString("date") ?: "",
-                        type = document.getString("type") ?: "",
-                        location = document.getString("location") ?: ""
+                        typeId = document.getString("typeId") ?: "",
+                        typeName = document.getString("typeName") ?: "",
+                        locationId = document.getString("locationId") ?: "",
+                        locationName = document.getString("locationName") ?: ""
                     )
                 }
-                eventAdapter.updateEvents(events)
+                eventAdapter.updateEvents(events.sortedBy { it.date })
             }
             .addOnFailureListener {
                 Toast.makeText(this, "Error loading events: ${it.message}", Toast.LENGTH_SHORT).show()

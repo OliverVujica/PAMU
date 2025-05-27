@@ -1,79 +1,64 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.drawerlayout.widget.DrawerLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/drawerLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layout_marginVertical="70dp">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/main"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:orientation="vertical"
         android:padding="16dp">
 
         <EditText
             android:id="@+id/nameEditText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Naziv dogadaja"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
+            android:hint="Event Name" />
 
         <EditText
             android:id="@+id/dateEditText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Datum (npr., 2025-05-20)"
-            android:layout_marginTop="16dp"
+            android:hint="Event Date"
             android:inputType="none"
-            android:drawableEnd="@android:drawable/ic_menu_my_calendar"
-            app:layout_constraintTop_toBottomOf="@id/nameEditText"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
+            android:focusable="false" />
 
-        <EditText
-            android:id="@+id/typeEditText"
+        <Spinner
+            android:id="@+id/typeSpinner"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Vrsta (npr., Konferencija, Koncert)"
-            android:layout_marginTop="16dp"
-            app:layout_constraintTop_toBottomOf="@id/dateEditText"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
+            android:hint="Event Type" />
 
-        <EditText
-            android:id="@+id/locationEditText"
+        <Spinner
+            android:id="@+id/locationSpinner"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Lokacija"
-            android:layout_marginTop="16dp"
-            app:layout_constraintTop_toBottomOf="@id/typeEditText"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
+            android:hint="Location" />
 
         <Button
             android:id="@+id/addEventButton"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Dodaj dogadaj"
-            android:layout_marginTop="16dp"
-            app:layout_constraintTop_toBottomOf="@id/locationEditText"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
+            android:text="Add Event" />
+
+        <Button
+            android:id="@+id/addEventTypeButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Add New Event Type"
+            android:visibility="gone" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/eventRecyclerView"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_marginTop="16dp"
-            app:layout_constraintTop_toBottomOf="@id/addEventButton"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
+            android:layout_weight="1" />
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
 
     <com.google.android.material.navigation.NavigationView
         android:id="@+id/navigationView"

@@ -140,11 +140,13 @@ class WelcomeActivity : AppCompatActivity() {
                         id = document.id,
                         name = document.getString("name") ?: "",
                         date = document.getString("date") ?: "",
-                        type = document.getString("type") ?: "",
-                        location = document.getString("location") ?: ""
+                        typeId = document.getString("typeId") ?: "",
+                        typeName = document.getString("typeName") ?: "",
+                        locationId = document.getString("locationId") ?: "",
+                        locationName = document.getString("locationName") ?: ""
                     )
                 }
-                eventAdapter.updateEvents(events)
+                eventAdapter.updateEvents(events.sortedBy { it.date }) // Optional: Sort by date
             }
             .addOnFailureListener {
                 Toast.makeText(this, "Error loading events: ${it.message}", Toast.LENGTH_SHORT).show()
