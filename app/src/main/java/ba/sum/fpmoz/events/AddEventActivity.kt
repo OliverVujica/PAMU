@@ -7,7 +7,6 @@ import android.os.Bundle
 import android.view.MenuItem
 import android.widget.ArrayAdapter
 import android.widget.Button
-import android.widget.EditText
 import android.widget.Spinner
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -19,6 +18,7 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.navigation.NavigationView
+import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.QuerySnapshot
@@ -28,12 +28,12 @@ class AddEventActivity : AppCompatActivity() {
 
     private lateinit var db: FirebaseFirestore
     private lateinit var auth: FirebaseAuth
-    private lateinit var eventName: EditText
-    private lateinit var eventDate: EditText
-    private lateinit var eventTime: EditText
+    private lateinit var eventName: TextInputEditText
+    private lateinit var eventDate: TextInputEditText
+    private lateinit var eventTime: TextInputEditText
     private lateinit var locationSpinner: Spinner
     private lateinit var typeSpinner: Spinner
-    private lateinit var eventDescription: EditText
+    private lateinit var eventDescription: TextInputEditText
     private lateinit var addEventButton: Button
     private lateinit var addEventTypeButton: Button
     private lateinit var drawerLayout: DrawerLayout
@@ -56,6 +56,7 @@ class AddEventActivity : AppCompatActivity() {
         eventTime = findViewById(R.id.event_time)
         locationSpinner = findViewById(R.id.locationSpinner)
         typeSpinner = findViewById(R.id.typeSpinner)
+        eventDescription = findViewById(R.id.eventDescription)
         addEventButton = findViewById(R.id.add_event_button)
         addEventTypeButton = findViewById(R.id.addEventTypeButton)
         drawerLayout = findViewById(R.id.drawerLayout)
@@ -149,8 +150,8 @@ class AddEventActivity : AppCompatActivity() {
             val locationPosition = locationSpinner.selectedItemPosition
             val description = eventDescription.text.toString().trim()
 
-            if (name.isEmpty() || date.isEmpty() || time.isEmpty() || typePosition == -1 || locationPosition == -1 || eventTypes.isEmpty() || locations.isEmpty()) {
-                Toast.makeText(this, "All fields are required", Toast.LENGTH_SHORT).show()
+            if (name.isEmpty() || date.isEmpty() || time.isEmpty() || typePosition == -1 || locationPosition == -1) {
+                Toast.makeText(this, "Required fields are missing", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -170,12 +171,12 @@ class AddEventActivity : AppCompatActivity() {
             db.collection("events").add(event)
                 .addOnSuccessListener {
                     Toast.makeText(this, "Event added successfully", Toast.LENGTH_SHORT).show()
-                    eventName.text.clear()
-                    eventDate.text.clear()
-                    eventTime.text.clear()
+                    eventName.text?.clear()
+                    eventDate.text?.clear()
+                    eventTime.text?.clear()
                     typeSpinner.setSelection(0)
                     locationSpinner.setSelection(0)
-                    eventDescription.text.clear()
+                    eventDescription.text?.clear()
                     loadEvents()
                 }
                 .addOnFailureListener {
@@ -334,7 +335,7 @@ class AddEventActivity : AppCompatActivity() {
                         typeId = document.getString("typeId") ?: "",
                         typeName = document.getString("typeName") ?: "",
                         locationId = document.getString("locationId") ?: "",
-                        locationName = document.getString("locationName") ?: "",
+                        locationName = document.getString("locationName") ?: ""
                     )
                 }
                 eventAdapter.updateEvents(events.sortedBy { it.date })
