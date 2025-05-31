@@ -21,7 +21,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.QuerySnapshot
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.appcompat.widget.Toolbar // Import Toolbar
+import androidx.appcompat.widget.Toolbar
 import java.util.Calendar
 
 class AddEventActivity : AppCompatActivity() {
@@ -36,13 +36,13 @@ class AddEventActivity : AppCompatActivity() {
     private lateinit var eventDescription: TextInputEditText
     private lateinit var addEventButton: Button
     private lateinit var addEventTypeButton: Button
-    private lateinit var drawerLayout: androidx.drawerlayout.widget.DrawerLayout // Corrected type
+    private lateinit var drawerLayout: androidx.drawerlayout.widget.DrawerLayout
     private lateinit var navigationView: NavigationView
     private lateinit var recyclerView: RecyclerView
     private lateinit var eventAdapter: EventAdapter
     private var eventTypes: List<Pair<String, String>> = emptyList() // (id, name)
     private var locations: List<Pair<String, String>> = emptyList() // (id, name)
-    private lateinit var toolbar: Toolbar // Declare toolbar
+    private lateinit var toolbar: Toolbar
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,14 +63,14 @@ class AddEventActivity : AppCompatActivity() {
         drawerLayout = findViewById(R.id.drawerLayout)
         navigationView = findViewById(R.id.navigationView)
         recyclerView = findViewById(R.id.event_list)
-        toolbar = findViewById(R.id.toolbar) // Initialize toolbar
+        toolbar = findViewById(R.id.toolbar)
 
-        setSupportActionBar(toolbar) // Set the toolbar as the action bar
+        setSupportActionBar(toolbar)
 
         recyclerView.layoutManager = LinearLayoutManager(this)
         eventAdapter = EventAdapter(emptyList(), R.layout.item_event, onDeleteClick = { eventId ->
             deleteEvent(eventId)
-        })
+        }) // onDeleteClick is still used here
         recyclerView.adapter = eventAdapter
 
         eventDate.setOnClickListener {
@@ -115,7 +115,6 @@ class AddEventActivity : AppCompatActivity() {
         )
         drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
-        // supportActionBar?.setDisplayHomeAsUpEnabled(true) // This is now handled by setting the toolbar as action bar and ActionBarDrawerToggle
 
         navigationView.setNavigationItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
@@ -195,9 +194,6 @@ class AddEventActivity : AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         val toggle = ActionBarDrawerToggle(
             this, drawerLayout, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close
         )
@@ -342,7 +338,8 @@ class AddEventActivity : AppCompatActivity() {
                         typeId = document.getString("typeId") ?: "",
                         typeName = document.getString("typeName") ?: "",
                         locationId = document.getString("locationId") ?: "",
-                        locationName = document.getString("locationName") ?: ""
+                        locationName = document.getString("locationName") ?: "",
+                        description = document.getString("description") ?: ""
                     )
                 }
                 eventAdapter.updateEvents(events.sortedBy { it.date })

@@ -10,7 +10,8 @@ import androidx.recyclerview.widget.RecyclerView
 class EventAdapter(
     private var events: List<Event>,
     private val layoutResId: Int,
-    private val onDeleteClick: (String) -> Unit
+    private val onDeleteClick: ((String) -> Unit)? = null, // Make onDeleteClick nullable
+    private val onItemClick: ((Event) -> Unit)? = null // New click listener for item click
 ) : RecyclerView.Adapter<EventAdapter.EventViewHolder>() {
 
     class EventViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -30,11 +31,16 @@ class EventAdapter(
     override fun onBindViewHolder(holder: EventViewHolder, position: Int) {
         val event = events[position]
         holder.eventName.text = event.name
-        holder.eventDate?.text = event.date
+        holder.eventDate?.text = event.date?.split(" ")?.getOrNull(0) // Display only date
         holder.eventType?.text = event.typeName
         holder.eventLocation?.text = event.locationName
         holder.deleteButton?.setOnClickListener {
-            onDeleteClick(event.id)
+            onDeleteClick?.invoke(event.id)
+        }
+
+        // Set click listener for the whole item view
+        holder.itemView.setOnClickListener {
+            onItemClick?.invoke(event)
         }
     }
 
