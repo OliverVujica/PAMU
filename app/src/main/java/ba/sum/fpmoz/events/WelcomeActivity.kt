@@ -128,6 +128,10 @@ class WelcomeActivity : AppCompatActivity() {
                     val intent = Intent(this, AddEventActivity::class.java)
                     startActivity(intent)
                 }
+                R.id.nav_manage_event_types -> {
+                    val intent = Intent(this, ManageEventTypesActivity::class.java)
+                    startActivity(intent)
+                }
                 R.id.nav_logout -> {
                     auth.signOut()
                     Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show()
@@ -212,13 +216,16 @@ class WelcomeActivity : AppCompatActivity() {
                         if (role == "admin") {
                             navigationView.menu.findItem(R.id.nav_user_list).isVisible = true
                             navigationView.menu.findItem(R.id.nav_add_event).isVisible = true
+                            navigationView.menu.findItem(R.id.nav_manage_event_types).isVisible = true
                         } else {
                             navigationView.menu.findItem(R.id.nav_user_list).isVisible = false
                             navigationView.menu.findItem(R.id.nav_add_event).isVisible = false
+                            navigationView.menu.findItem(R.id.nav_manage_event_types).isVisible = false
                         }
                     } else {
                         navigationView.menu.findItem(R.id.nav_user_list).isVisible = false
                         navigationView.menu.findItem(R.id.nav_add_event).isVisible = false
+                        navigationView.menu.findItem(R.id.nav_manage_event_types).isVisible = false
                     }
                     loadFilterDataAndEvents()
                 }

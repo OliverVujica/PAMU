@@ -9,7 +9,7 @@ import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.Spinner
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
+//import androidx.activity.enableEdgeToEdge // Uklonjeno ako nije potrebno ili uzrokuje probleme
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.GravityCompat
@@ -35,7 +35,7 @@ class AddEventActivity : AppCompatActivity() {
     private lateinit var typeSpinner: Spinner
     private lateinit var eventDescription: TextInputEditText
     private lateinit var addEventButton: Button
-    private lateinit var addEventTypeButton: Button
+    // private lateinit var addEventTypeButton: Button // Uklonjeno
     private lateinit var drawerLayout: androidx.drawerlayout.widget.DrawerLayout
     private lateinit var navigationView: NavigationView
     private lateinit var recyclerView: RecyclerView
@@ -46,7 +46,7 @@ class AddEventActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        // enableEdgeToEdge() // Uklonjeno ili zakomentirano ako nije nužno
         setContentView(R.layout.activity_add_event)
 
         db = FirebaseFirestore.getInstance()
@@ -59,7 +59,7 @@ class AddEventActivity : AppCompatActivity() {
         typeSpinner = findViewById(R.id.typeSpinner)
         eventDescription = findViewById(R.id.eventDescription)
         addEventButton = findViewById(R.id.add_event_button)
-        addEventTypeButton = findViewById(R.id.addEventTypeButton)
+        // addEventTypeButton = findViewById(R.id.addEventTypeButton) // Uklonjeno
         drawerLayout = findViewById(R.id.drawerLayout)
         navigationView = findViewById(R.id.navigationView)
         recyclerView = findViewById(R.id.event_list)
@@ -70,7 +70,7 @@ class AddEventActivity : AppCompatActivity() {
         recyclerView.layoutManager = LinearLayoutManager(this)
         eventAdapter = EventAdapter(emptyList(), R.layout.item_event, onDeleteClick = { eventId ->
             deleteEvent(eventId)
-        }) // onDeleteClick is still used here
+        })
         recyclerView.adapter = eventAdapter
 
         eventDate.setOnClickListener {
@@ -121,13 +121,20 @@ class AddEventActivity : AppCompatActivity() {
                 R.id.nav_home -> {
                     val intent = Intent(this, WelcomeActivity::class.java)
                     startActivity(intent)
+                    finish()
                 }
                 R.id.nav_user_list -> {
                     val intent = Intent(this, UserList::class.java)
                     startActivity(intent)
+                    // finish() // Ovisno da li želite zatvoriti ovu aktivnost
                 }
                 R.id.nav_add_event -> {
-                    // Current activity, do nothing or show a message
+                    // Trenutna aktivnost
+                }
+                R.id.nav_manage_event_types -> {
+                    val intent = Intent(this, ManageEventTypesActivity::class.java)
+                    startActivity(intent)
+                    // finish() // Ovisno da li želite zatvoriti ovu aktivnost
                 }
                 R.id.nav_logout -> {
                     auth.signOut()
@@ -154,10 +161,20 @@ class AddEventActivity : AppCompatActivity() {
             val locationPosition = locationSpinner.selectedItemPosition
             val description = eventDescription.text.toString().trim()
 
-            if (name.isEmpty() || date.isEmpty() || time.isEmpty() || typePosition == -1 || locationPosition == -1) {
-                Toast.makeText(this, "Required fields are missing", Toast.LENGTH_SHORT).show()
+            if (name.isEmpty() || date.isEmpty() || time.isEmpty() || typePosition == -1 || locationPosition == -1 || typePosition >= eventTypes.size || locationPosition >= locations.size) {
+                Toast.makeText(this, "Required fields are missing or invalid selection", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
+
+            if (eventTypes.isEmpty()) {
+                Toast.makeText(this, "No event types available. Please add event types first.", Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+            if (locations.isEmpty()) {
+                Toast.makeText(this, "No locations available. Please add locations if necessary (or check Firestore).", Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+
 
             val typePair = eventTypes[typePosition]
             val locationPair = locations[locationPosition]
@@ -178,8 +195,8 @@ class AddEventActivity : AppCompatActivity() {
                     eventName.text?.clear()
                     eventDate.text?.clear()
                     eventTime.text?.clear()
-                    typeSpinner.setSelection(0)
-                    locationSpinner.setSelection(0)
+                    if (typeSpinner.adapter.count > 0) typeSpinner.setSelection(0)
+                    if (locationSpinner.adapter.count > 0) locationSpinner.setSelection(0)
                     eventDescription.text?.clear()
                     loadEvents()
                 }
@@ -188,9 +205,7 @@ class AddEventActivity : AppCompatActivity() {
                 }
         }
 
-        addEventTypeButton.setOnClickListener {
-            showAddEventTypeDialog()
-        }
+        // Uklonjen listener za addEventTypeButton
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -218,19 +233,25 @@ class AddEventActivity : AppCompatActivity() {
                     if (role == "admin") {
                         navigationView.menu.findItem(R.id.nav_user_list).isVisible = true
                         navigationView.menu.findItem(R.id.nav_add_event).isVisible = true
-                        addEventTypeButton.isVisible = true
+                        navigationView.menu.findItem(R.id.nav_manage_event_types).isVisible = true
+                        // addEventTypeButton.isVisible = true // Uklonjeno
                         loadEvents()
                     } else {
                         navigationView.menu.findItem(R.id.nav_user_list).isVisible = false
                         navigationView.menu.findItem(R.id.nav_add_event).isVisible = false
-                        addEventTypeButton.isVisible = false
-                        Toast.makeText(this, "Access denied: Admin rights required", Toast.LENGTH_SHORT).show()
+                        navigationView.menu.findItem(R.id.nav_manage_event_types).isVisible = false
+                        // addEventTypeButton.isVisible = false // Uklonjeno
+                        Toast.makeText(this, "Access denied: Admin rights required to add events.", Toast.LENGTH_SHORT).show()
+                        // Preusmjeri na WelcomeActivity ako korisnik nije admin
+                        val intent = Intent(this, WelcomeActivity::class.java)
+                        startActivity(intent)
                         finish()
                     }
                 } else {
                     navigationView.menu.findItem(R.id.nav_user_list).isVisible = false
                     navigationView.menu.findItem(R.id.nav_add_event).isVisible = false
-                    addEventTypeButton.isVisible = false
+                    navigationView.menu.findItem(R.id.nav_manage_event_types).isVisible = false
+                    // addEventTypeButton.isVisible = false // Uklonjeno
                     Toast.makeText(this, "User data not found", Toast.LENGTH_SHORT).show()
                     finish()
                 }
@@ -238,7 +259,8 @@ class AddEventActivity : AppCompatActivity() {
             .addOnFailureListener {
                 navigationView.menu.findItem(R.id.nav_user_list).isVisible = false
                 navigationView.menu.findItem(R.id.nav_add_event).isVisible = false
-                addEventTypeButton.isVisible = false
+                navigationView.menu.findItem(R.id.nav_manage_event_types).isVisible = false
+                // addEventTypeButton.isVisible = false // Uklonjeno
                 Toast.makeText(this, "Failed to check user role", Toast.LENGTH_SHORT).show()
                 finish()
             }
@@ -258,7 +280,8 @@ class AddEventActivity : AppCompatActivity() {
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
                 typeSpinner.adapter = adapter
                 if (eventTypes.isEmpty()) {
-                    Toast.makeText(this, "No event types available", Toast.LENGTH_SHORT).show()
+                    // Toast.makeText(this, "No event types available", Toast.LENGTH_SHORT).show()
+                    // Nema potrebe za toastom ovdje, jer će se provjera vršiti prije dodavanja eventa
                 }
             }
             .addOnFailureListener {
@@ -280,7 +303,7 @@ class AddEventActivity : AppCompatActivity() {
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
                 locationSpinner.adapter = adapter
                 if (locations.isEmpty()) {
-                    Toast.makeText(this, "No locations available", Toast.LENGTH_SHORT).show()
+                    // Toast.makeText(this, "No locations available", Toast.LENGTH_SHORT).show()
                 }
             }
             .addOnFailureListener {
@@ -288,44 +311,7 @@ class AddEventActivity : AppCompatActivity() {
             }
     }
 
-    private fun showAddEventTypeDialog() {
-        val editText = android.widget.EditText(this)
-        editText.hint = "Enter new event type"
-
-        val layout = android.widget.LinearLayout(this)
-        layout.orientation = android.widget.LinearLayout.VERTICAL
-        layout.setPadding(50, 30, 50, 30)
-        layout.addView(editText)
-
-        val builder = androidx.appcompat.app.AlertDialog.Builder(this)
-        builder.setTitle("Add New Event Type")
-            .setView(layout)
-            .setPositiveButton("Add") { dialog, _ ->
-                val newType = editText.text.toString().trim()
-                if (newType.isEmpty()) {
-                    Toast.makeText(this, "Event type cannot be empty", Toast.LENGTH_SHORT).show()
-                } else {
-                    addEventType(newType)
-                    dialog.dismiss()
-                }
-            }
-            .setNegativeButton("Cancel") { dialog, _ ->
-                dialog.dismiss()
-            }
-        builder.show()
-    }
-
-    private fun addEventType(typeName: String) {
-        val eventType = hashMapOf("name" to typeName)
-        db.collection("event_types").add(eventType)
-            .addOnSuccessListener {
-                Toast.makeText(this, "Event type added successfully", Toast.LENGTH_SHORT).show()
-                loadEventTypes()
-            }
-            .addOnFailureListener {
-                Toast.makeText(this, "Error adding event type: ${it.message}", Toast.LENGTH_SHORT).show()
-            }
-    }
+    // Uklonjene metode showAddEventTypeDialog() i addEventType(typeName: String)
 
     private fun loadEvents() {
         db.collection("events").get()

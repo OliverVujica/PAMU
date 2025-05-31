@@ -12,6 +12,10 @@
         android:title="Add Event"
         app:showAsAction="ifRoom"/>
     <item
+        android:id="@+id/nav_manage_event_types"
+        android:icon="@drawable/ic_edit" android:title="Manage Event Types"
+        app:showAsAction="ifRoom"/>
+    <item
         android:id="@+id/nav_user_list"
         android:icon="@drawable/ic_user_list"
         android:title="User List"
