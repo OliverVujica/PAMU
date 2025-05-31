@@ -42,6 +42,10 @@
             android:exported="false" />
         <activity
             android:name=".ManageEventTypesActivity"
-            android:exported="false" />  </application>
+            android:exported="false" />
+        <activity
+            android:name=".InterestedEventsActivity"
+            android:exported="false" />
+    </application>
 
 </manifest>

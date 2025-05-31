@@ -13,7 +13,11 @@
         app:showAsAction="ifRoom"/>
     <item
         android:id="@+id/nav_manage_event_types"
-        android:icon="@drawable/ic_edit" android:title="Manage Event Types"
+        android:icon="@drawable/ic_category"
+        android:title="Manage Event Types"
+        app:showAsAction="ifRoom"/>
+    <item
+        android:id="@+id/nav_my_list" android:icon="@drawable/ic_star_filled" android:title="My Interested List"
         app:showAsAction="ifRoom"/>
     <item
         android:id="@+id/nav_user_list"
