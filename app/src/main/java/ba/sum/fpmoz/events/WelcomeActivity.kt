@@ -5,11 +5,14 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.MenuItem
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
+import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.Spinner
@@ -47,6 +50,8 @@ class WelcomeActivity : AppCompatActivity() {
     private lateinit var clearFiltersButton: Button
     private lateinit var filterButton: ImageView
     private lateinit var filterOptionsContainer: LinearLayout
+    private lateinit var searchButton: ImageView
+    private lateinit var eventSearchEditText: EditText
 
     private var allEvents: List<Event> = emptyList()
     private var locations: List<Pair<String, String>> = emptyList() // (id, name)
@@ -83,6 +88,8 @@ class WelcomeActivity : AppCompatActivity() {
         clearFiltersButton = findViewById(R.id.clear_filters_button)
         filterButton = findViewById(R.id.filter_button)
         filterOptionsContainer = findViewById(R.id.filter_options_container)
+        searchButton = findViewById(R.id.search_button)
+        eventSearchEditText = findViewById(R.id.event_search_edit_text)
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
@@ -154,6 +161,18 @@ class WelcomeActivity : AppCompatActivity() {
             toggleFilterOptionsVisibility()
         }
 
+        searchButton.setOnClickListener {
+            toggleEventSearchVisibility()
+        }
+
+        eventSearchEditText.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                applyFilters()
+            }
+            override fun afterTextChanged(s: Editable?) {}
+        })
+
         requestLocationPermission()
     }
 
@@ -172,6 +191,14 @@ class WelcomeActivity : AppCompatActivity() {
             filterOptionsContainer.visibility = View.GONE
         } else {
             filterOptionsContainer.visibility = View.VISIBLE
+        }
+    }
+
+    private fun toggleEventSearchVisibility() {
+        if (eventSearchEditText.visibility == View.VISIBLE) {
+            eventSearchEditText.visibility = View.GONE
+        } else {
+            eventSearchEditText.visibility = View.VISIBLE
         }
     }
 
@@ -213,7 +240,7 @@ class WelcomeActivity : AppCompatActivity() {
         db.collection("locations").get()
             .addOnSuccessListener { result ->
                 val fetchedLocations = mutableListOf<Pair<String, String>>()
-                fetchedLocations.add(Pair("", "All Locations")) // Add "All" option
+                fetchedLocations.add(Pair("", "All Locations"))
                 fetchedLocations.addAll(result.map { document ->
                     Pair(document.id, document.getString("name") ?: "")
                 })
@@ -222,7 +249,7 @@ class WelcomeActivity : AppCompatActivity() {
                 val locationAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, locationNames)
                 locationAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
                 locationFilterSpinner.adapter = locationAdapter
-                locationFilterSpinner.setSelection(0) // Default to "All Locations"
+                locationFilterSpinner.setSelection(0)
             }
             .addOnFailureListener {
                 Toast.makeText(this, "Error loading locations: ${it.message}", Toast.LENGTH_SHORT).show()
@@ -296,6 +323,7 @@ class WelcomeActivity : AppCompatActivity() {
 
         val selectedLocationId = locations.getOrNull(locationFilterSpinner.selectedItemPosition)?.first
         val selectedTypeId = eventTypes.getOrNull(typeFilterSpinner.selectedItemPosition)?.first
+        val searchQuery = eventSearchEditText.text.toString().trim().lowercase(Locale.getDefault())
 
         if (!selectedLocationId.isNullOrEmpty()) {
             filteredEvents = filteredEvents.filter { it.locationId == selectedLocationId }
@@ -305,12 +333,20 @@ class WelcomeActivity : AppCompatActivity() {
             filteredEvents = filteredEvents.filter { it.typeId == selectedTypeId }
         }
 
+        if (searchQuery.isNotEmpty()) {
+            filteredEvents = filteredEvents.filter { event ->
+                event.name.lowercase(Locale.getDefault()).contains(searchQuery) ||
+                        event.description.lowercase(Locale.getDefault()).contains(searchQuery)
+            }
+        }
+
         eventAdapter.updateEvents(filteredEvents)
     }
 
     private fun clearFilters() {
         locationFilterSpinner.setSelection(0) // Select "All Locations"
         typeFilterSpinner.setSelection(0) // Select "All Types"
+        eventSearchEditText.text.clear() // Clear search query
         applyFilters() // Reapply filters to show all events
     }
 

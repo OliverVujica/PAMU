@@ -22,16 +22,33 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:title="Welcome">
-            <ImageView
-                android:id="@+id/filter_button"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@drawable/ic_filter"
+                android:orientation="horizontal"
                 android:layout_gravity="end"
-                android:padding="16dp"
-                android:clickable="true"
-                android:focusable="true"
-                android:contentDescription="Filter events"/>
+                android:paddingEnd="16dp">
+
+                <ImageView
+                    android:id="@+id/search_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_search"
+                    android:padding="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:contentDescription="Search events"/>
+
+                <ImageView
+                    android:id="@+id/filter_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_filter"
+                    android:padding="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:contentDescription="Filter events"/>
+            </LinearLayout>
         </com.google.android.material.appbar.MaterialToolbar>
 
         <TextView
@@ -46,6 +63,23 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/toolbar"/>
 
+        <EditText
+            android:id="@+id/event_search_edit_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="8dp"
+            android:hint="Search events by name or description"
+            android:padding="12dp"
+            android:background="@drawable/rounded_edittext_background"
+            android:drawableStart="@drawable/ic_search_24"
+            android:drawablePadding="8dp"
+            android:singleLine="true"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/welcomeTextView"/>
+
         <LinearLayout
             android:id="@+id/filter_options_container"
             android:layout_width="0dp"
@@ -56,7 +90,7 @@
             android:visibility="gone"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/welcomeTextView">
+            app:layout_constraintTop_toBottomOf="@id/event_search_edit_text">
 
             <Spinner
                 android:id="@+id/location_filter_spinner"
