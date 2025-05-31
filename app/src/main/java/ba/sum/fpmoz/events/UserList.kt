@@ -9,11 +9,13 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import android.view.LayoutInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.widget.Toolbar // Import Toolbar
 
 class UserList : AppCompatActivity() {
 
@@ -21,6 +23,7 @@ class UserList : AppCompatActivity() {
     private lateinit var db: FirebaseFirestore
     private lateinit var recyclerView: RecyclerView
     private lateinit var userAdapter: UserAdapter
+    private lateinit var toolbar: Toolbar // Declare toolbar
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,12 +33,25 @@ class UserList : AppCompatActivity() {
         auth = FirebaseAuth.getInstance()
         db = FirebaseFirestore.getInstance()
         recyclerView = findViewById(R.id.user_list)
+        toolbar = findViewById(R.id.toolbar) // Initialize toolbar
+
+        setSupportActionBar(toolbar) // Set the toolbar as the action bar
+        supportActionBar?.setDisplayHomeAsUpEnabled(true) // Enable back button
+        supportActionBar?.title = "User List" // Set title
 
         recyclerView.layoutManager = LinearLayoutManager(this)
         userAdapter = UserAdapter(emptyList(), onDeleteClick = { userId -> deleteUser(userId) }, onUpdateRoleClick = { userId, role -> showUpdateRoleDialog(userId, role) })
         recyclerView.adapter = userAdapter
 
         checkAdminStatus()
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (item.itemId == android.R.id.home) {
+            onBackPressedDispatcher.onBackPressed() // Handle back button click
+            return true
+        }
+        return super.onOptionsItemSelected(item)
     }
 
     private fun checkAdminStatus() {
