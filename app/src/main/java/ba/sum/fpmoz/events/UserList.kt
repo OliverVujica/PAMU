@@ -36,7 +36,7 @@ class UserList : AppCompatActivity() {
     private var allUsers: List<User> = emptyList()
     private var filteredUsers: List<User> = emptyList()
     private var currentPage = 0
-    private val usersPerPage = 10
+    private val usersPerPage = 5
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

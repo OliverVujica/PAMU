@@ -13,17 +13,18 @@ class EventAdapter(
     private val layoutResId: Int,
     private val onDeleteClick: ((String) -> Unit)? = null,
     private val onItemClick: ((Event) -> Unit)? = null,
-    private val onInterestClick: ((Event, Int) -> Unit)? = null // Callback za klik na "zainteresiran"
+    private val onInterestClick: ((Event, Int) -> Unit)? = null, // Callback za klik na "zainteresiran"
+    private val onEditClick: ((Event) -> Unit)? = null // Callback for edit click
 ) : RecyclerView.Adapter<EventAdapter.EventViewHolder>() {
 
     class EventViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val eventName: TextView = itemView.findViewById(R.id.event_name)
-        val eventDate: TextView? = itemView.findViewById(R.id.event_date) // Može biti null ako se koristi item_event.xml
-        val eventType: TextView? = itemView.findViewById(R.id.event_type) // Može biti null
-        val eventLocation: TextView? = itemView.findViewById(R.id.event_location) // Može biti null
-        val deleteButton: Button? = itemView.findViewById(R.id.btnDelete) // Može biti null
+        val eventDate: TextView? = itemView.findViewById(R.id.event_date)
+        val eventType: TextView? = itemView.findViewById(R.id.event_type)
+        val eventLocation: TextView? = itemView.findViewById(R.id.event_location)
+        val deleteButton: Button? = itemView.findViewById(R.id.btnDelete)
+        val editButton: Button? = itemView.findViewById(R.id.btnEdit) // Added Edit Button
 
-        // Novi View elementi za "zainteresiran sam" (samo za item_event_welcome.xml)
         val interestedIcon: ImageView? = itemView.findViewById(R.id.interested_icon)
         val interestedCountText: TextView? = itemView.findViewById(R.id.interested_count_text)
     }
@@ -38,7 +39,6 @@ class EventAdapter(
         val event = events[position]
         holder.eventName.text = event.name
 
-        // Postavljanje datuma, tipa, lokacije ako postoje u layoutu
         holder.eventDate?.text = event.date.split(" ").getOrNull(0)
         holder.eventType?.text = event.typeName
         holder.eventLocation?.text = event.locationName
@@ -47,11 +47,14 @@ class EventAdapter(
             onDeleteClick?.invoke(event.id)
         }
 
+        holder.editButton?.setOnClickListener { // Added listener for Edit button
+            onEditClick?.invoke(event)
+        }
+
         holder.itemView.setOnClickListener {
             onItemClick?.invoke(event)
         }
 
-        // Postavljanje za "zainteresiran sam" ako View elementi postoje
         if (holder.interestedIcon != null && holder.interestedCountText != null) {
             if (event.isCurrentUserInterested) {
                 holder.interestedIcon.setImageResource(R.drawable.ic_star_filled)
@@ -64,7 +67,6 @@ class EventAdapter(
                 onInterestClick?.invoke(event, position)
             }
         } else {
-            // Ako se koristi layout koji nema ove elemente (npr. item_event.xml), sakrij ih ili nemoj ništa raditi
             holder.interestedIcon?.visibility = View.GONE
             holder.interestedCountText?.visibility = View.GONE
         }

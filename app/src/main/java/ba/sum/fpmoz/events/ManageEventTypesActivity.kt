@@ -10,7 +10,6 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.GravityCompat
-import androidx.core.view.isVisible
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -64,7 +63,7 @@ class ManageEventTypesActivity : AppCompatActivity() {
                     finish()
                 }
                 R.id.nav_add_event -> {
-                    startActivity(Intent(this, AddEventActivity::class.java))
+                    startActivity(Intent(this, ManageEventsActivity::class.java))
                     finish()
                 }
                 R.id.nav_manage_event_types -> {

@@ -15,7 +15,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.navigation.NavigationView
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 
@@ -246,7 +245,7 @@ class InterestedEventsActivity : AppCompatActivity() {
                     finish()
                 }
                 R.id.nav_add_event -> {
-                    startActivity(Intent(this, AddEventActivity::class.java))
+                    startActivity(Intent(this, ManageEventsActivity::class.java))
                     finish()
                 }
                 R.id.nav_manage_event_types -> {

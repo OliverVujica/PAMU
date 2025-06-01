@@ -161,7 +161,7 @@ class WelcomeActivity : AppCompatActivity() {
             drawerLayout.closeDrawer(GravityCompat.START)
             when (menuItem.itemId) {
                 R.id.nav_home -> { /* Current activity */ }
-                R.id.nav_add_event -> startActivity(Intent(this, AddEventActivity::class.java))
+                R.id.nav_add_event -> startActivity(Intent(this, ManageEventsActivity::class.java))
                 R.id.nav_manage_event_types -> startActivity(Intent(this, ManageEventTypesActivity::class.java))
                 R.id.nav_user_list -> startActivity(Intent(this, UserList::class.java))
                 R.id.nav_my_list -> startActivity(Intent(this, InterestedEventsActivity::class.java)) // Nova stavka
