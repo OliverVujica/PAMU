@@ -2,9 +2,11 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/white">
+    android:background="@android:color/white"
+    tools:context=".UserList">
 
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
@@ -43,7 +45,25 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/user_search_edit_text"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        android:visibility="gone"/> <ProgressBar
+    android:id="@+id/user_loading_progress_bar" style="?android:attr/progressBarStyleLarge"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:visibility="gone" app:layout_constraintTop_toTopOf="@id/user_list"
+    app:layout_constraintBottom_toBottomOf="@id/user_list"
+    app:layout_constraintStart_toStartOf="@id/user_list"
+    app:layout_constraintEnd_toEndOf="@id/user_list" />
+
+    <TextView
+        android:id="@+id/user_empty_view_text" android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="No users found."
+        android:textSize="18sp"
+        android:visibility="gone" app:layout_constraintTop_toTopOf="@id/user_list"
+        app:layout_constraintBottom_toBottomOf="@id/user_list"
+        app:layout_constraintStart_toStartOf="@id/user_list"
+        app:layout_constraintEnd_toEndOf="@id/user_list"/>
 
     <LinearLayout
         android:id="@+id/pagination_controls_layout"
@@ -54,13 +74,12 @@
         android:padding="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
-
-        <Button
-            android:id="@+id/prev_page_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Previous"/>
+        app:layout_constraintStart_toStartOf="parent"
+        android:visibility="gone"> <Button
+        android:id="@+id/prev_page_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Previous"/>
 
         <TextView
             android:id="@+id/page_info_text_view"
