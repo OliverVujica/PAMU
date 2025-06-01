@@ -7,6 +7,10 @@
         android:title="Home"
         app:showAsAction="ifRoom"/>
     <item
+        android:id="@+id/nav_profile" android:icon="@drawable/ic_person"
+        android:title="My Profile"
+        app:showAsAction="ifRoom"/>
+    <item
         android:id="@+id/nav_add_event"
         android:icon="@drawable/ic_add_event"
         android:title="Manage Events"

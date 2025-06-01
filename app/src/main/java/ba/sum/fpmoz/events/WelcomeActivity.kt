@@ -59,11 +59,11 @@ class WelcomeActivity : AppCompatActivity() {
     private lateinit var eventSearchEditText: EditText
     private lateinit var loadingProgressBar: ProgressBar
     private lateinit var emptyViewText: TextView
-
     private var allEvents: MutableList<Event> = mutableListOf()
     private var currentUserInterestedEventIds: MutableSet<String> = mutableSetOf()
     private var locations: List<Pair<String, String>> = emptyList()
     private var eventTypes: List<Pair<String, String>> = emptyList()
+    private var userPreferredEventTypeIds: List<String> = emptyList()
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
 
@@ -85,7 +85,6 @@ class WelcomeActivity : AppCompatActivity() {
         auth = FirebaseAuth.getInstance()
         db = FirebaseFirestore.getInstance()
 
-        // Inicijalizacija UI elemenata
         welcomeTextView = findViewById(R.id.welcomeTextView)
         drawerLayout = findViewById(R.id.drawerLayout)
         navigationView = findViewById(R.id.navigationView)
@@ -98,8 +97,6 @@ class WelcomeActivity : AppCompatActivity() {
         filterOptionsContainer = findViewById(R.id.filter_options_container)
         searchButton = findViewById(R.id.search_button)
         eventSearchEditText = findViewById(R.id.event_search_edit_text)
-
-        // Inicijalizacija loading UI elemenata
         loadingProgressBar = findViewById(R.id.loading_progress_bar)
         emptyViewText = findViewById(R.id.empty_view_text)
 
@@ -107,7 +104,6 @@ class WelcomeActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
         recyclerView.layoutManager = LinearLayoutManager(this)
 
-        // Inicijalno sakrij listu i tekst za prazno stanje
         recyclerView.visibility = View.GONE
         emptyViewText.visibility = View.GONE
 
@@ -157,15 +153,15 @@ class WelcomeActivity : AppCompatActivity() {
 
         val currentUser = auth.currentUser
         if (currentUser != null) {
-            welcomeTextView.text = "Welcome, ${currentUser.email}!"
-            // Prvo dohvati zainteresirane, pa onda provjeri ulogu koja će pokrenuti loadFilterDataAndEvents
-            fetchCurrentUserInterestedEventIds {
+            welcomeTextView.text = "Welcome, ${currentUser.email}!" //
+            fetchCurrentUserInterestedEventIds { // Prvo dohvati zainteresirane, pa onda provjeri ulogu i učitaj sve
                 checkUserRole()
             }
         } else {
-            welcomeTextView.text = "Welcome to our app!"
+            welcomeTextView.text = "Welcome to our app!" //
             configureNavDrawerForGuest()
-            loadFilterDataAndEvents()
+            userPreferredEventTypeIds = emptyList() // Gost nema preferencija
+            loadFilterSpinnersDataAndThenEvents() // Gosti direktno učitavaju podatke za filtere i događaje
         }
     }
 
@@ -173,14 +169,17 @@ class WelcomeActivity : AppCompatActivity() {
         navigationView.setNavigationItemSelectedListener { menuItem ->
             drawerLayout.closeDrawer(GravityCompat.START)
             when (menuItem.itemId) {
-                R.id.nav_home -> { /* Current activity */ }
-                R.id.nav_add_event -> startActivity(Intent(this, ManageEventsActivity::class.java))
-                R.id.nav_manage_event_types -> startActivity(Intent(this, ManageEventTypesActivity::class.java))
-                R.id.nav_user_list -> startActivity(Intent(this, UserList::class.java))
-                R.id.nav_my_list -> startActivity(Intent(this, InterestedEventsActivity::class.java))
+                R.id.nav_home -> { /* Current activity */ } //
+                R.id.nav_profile -> {
+                    startActivity(Intent(this, ProfileActivity::class.java))
+                }
+                R.id.nav_add_event -> startActivity(Intent(this, ManageEventsActivity::class.java)) //
+                R.id.nav_manage_event_types -> startActivity(Intent(this, ManageEventTypesActivity::class.java)) //
+                R.id.nav_user_list -> startActivity(Intent(this, UserList::class.java)) //
+                R.id.nav_my_list -> startActivity(Intent(this, InterestedEventsActivity::class.java)) // Nova stavka
                 R.id.nav_logout -> {
                     auth.signOut()
-                    currentUserInterestedEventIds.clear()
+                    currentUserInterestedEventIds.clear() // Ocisti listu zainteresiranih kod odjave
                     Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show()
                     val intent = Intent(this, LoginActivity::class.java)
                     intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -193,11 +192,13 @@ class WelcomeActivity : AppCompatActivity() {
     }
 
     private fun configureNavDrawerForGuest() {
-        navigationView.menu.findItem(R.id.nav_user_list).isVisible = false
-        navigationView.menu.findItem(R.id.nav_add_event).isVisible = false
-        navigationView.menu.findItem(R.id.nav_manage_event_types).isVisible = false
-        navigationView.menu.findItem(R.id.nav_my_list).isVisible = false
-        navigationView.menu.findItem(R.id.nav_logout).isVisible = false
+        val menu = navigationView.menu
+        menu.findItem(R.id.nav_profile).isVisible = false
+        menu.findItem(R.id.nav_user_list).isVisible = false //
+        menu.findItem(R.id.nav_add_event).isVisible = false //
+        menu.findItem(R.id.nav_manage_event_types).isVisible = false //
+        menu.findItem(R.id.nav_my_list).isVisible = false // Ni gosti nemaju "Moju listu"
+        menu.findItem(R.id.nav_logout).isVisible = false // Gosti se ne mogu odjaviti
     }
 
     private fun fetchCurrentUserInterestedEventIds(onComplete: () -> Unit) {
@@ -219,7 +220,7 @@ class WelcomeActivity : AppCompatActivity() {
                 Toast.makeText(this, "Failed to fetch interested events: ${it.message}", Toast.LENGTH_SHORT).show()
             }
             .addOnCompleteListener {
-                onComplete() // Uvijek pozovi onComplete da se nastavi s provjerom uloge ili učitavanjem
+                onComplete()
             }
     }
 
@@ -230,7 +231,6 @@ class WelcomeActivity : AppCompatActivity() {
             return
         }
 
-
         val eventRef = db.collection("events").document(event.id)
         val userInterestedEventRef = db.collection("users").document(userId)
             .collection("interested_events").document(event.id)
@@ -239,11 +239,11 @@ class WelcomeActivity : AppCompatActivity() {
             val currentEventSnapshot = transaction.get(eventRef)
             var currentInterestedCount = currentEventSnapshot.getLong("interestedCount")?.toInt() ?: 0
 
-            if (event.isCurrentUserInterested) {
+            if (event.isCurrentUserInterested) { // Korisnik želi ukloniti interes
                 transaction.delete(userInterestedEventRef)
                 currentInterestedCount = (currentInterestedCount - 1).coerceAtLeast(0)
                 transaction.update(eventRef, "interestedCount", currentInterestedCount)
-            } else {
+            } else { // Korisnik želi dodati interes
                 transaction.set(userInterestedEventRef, mapOf("timestamp" to FieldValue.serverTimestamp()))
                 currentInterestedCount += 1
                 transaction.update(eventRef, "interestedCount", currentInterestedCount)
@@ -259,13 +259,11 @@ class WelcomeActivity : AppCompatActivity() {
                 allEvents[indexInAllEvents].isCurrentUserInterested = newInterestStatus
                 allEvents[indexInAllEvents].interestedCount = newCount
             }
-            applyFilters() // Osvježi prikaz
+            applyFilters()
             val message = if (newInterestStatus) "Added to your interested list" else "Removed from your interested list"
             Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
         }.addOnFailureListener { e ->
             Toast.makeText(this, "Failed to update interest: ${e.message}", Toast.LENGTH_SHORT).show()
-        }.addOnCompleteListener {
-            // Npr. eventAdapter.setItemClickable(position, true)
         }
     }
 
@@ -290,88 +288,104 @@ class WelcomeActivity : AppCompatActivity() {
     private fun checkUserRole() {
         val currentUser = auth.currentUser
         val navMenu = navigationView.menu
-        navMenu.findItem(R.id.nav_my_list).isVisible = currentUser != null
-        navMenu.findItem(R.id.nav_logout).isVisible = currentUser != null
+        navMenu.findItem(R.id.nav_profile).isVisible = currentUser != null
+        navMenu.findItem(R.id.nav_my_list).isVisible = currentUser != null // "Moja lista" vidljiva ako je korisnik prijavljen
+        navMenu.findItem(R.id.nav_logout).isVisible = currentUser != null //
 
         if (currentUser == null) {
             configureNavDrawerForGuest()
-            loadFilterDataAndEvents()
+            userPreferredEventTypeIds = emptyList()
+            loadFilterSpinnersDataAndThenEvents()
             return
         }
 
         db.collection("users").document(currentUser.uid).get()
             .addOnSuccessListener { document ->
                 val isAdmin = document?.getString("role") == "admin"
-                navMenu.findItem(R.id.nav_user_list).isVisible = isAdmin
-                navMenu.findItem(R.id.nav_add_event).isVisible = isAdmin
-                navMenu.findItem(R.id.nav_manage_event_types).isVisible = isAdmin
+                navMenu.findItem(R.id.nav_user_list).isVisible = isAdmin //
+                navMenu.findItem(R.id.nav_add_event).isVisible = isAdmin //
+                navMenu.findItem(R.id.nav_manage_event_types).isVisible = isAdmin //
+
+                @Suppress("UNCHECKED_CAST")
+                val preferredIdsFromDb = document?.get("preferredEventTypeIds") as? List<String>
+                userPreferredEventTypeIds = preferredIdsFromDb ?: emptyList()
+
+                loadFilterSpinnersDataAndThenEvents()
             }
             .addOnFailureListener {
-                Toast.makeText(this, "Failed to check user role", Toast.LENGTH_SHORT).show()
-                navMenu.findItem(R.id.nav_user_list).isVisible = false
-                navMenu.findItem(R.id.nav_add_event).isVisible = false
-                navMenu.findItem(R.id.nav_manage_event_types).isVisible = false
-            }
-            .addOnCompleteListener {
-                loadFilterDataAndEvents()
+                Toast.makeText(this, "Failed to check user role or preferences: ${it.message}", Toast.LENGTH_SHORT).show()
+                userPreferredEventTypeIds = emptyList()
+                navMenu.findItem(R.id.nav_user_list).isVisible = false //
+                navMenu.findItem(R.id.nav_add_event).isVisible = false //
+                navMenu.findItem(R.id.nav_manage_event_types).isVisible = false //
+                loadFilterSpinnersDataAndThenEvents()
             }
     }
 
-    private fun loadFilterDataAndEvents() {
-
+    private fun loadFilterSpinnersDataAndThenEvents() {
         loadingProgressBar.visibility = View.VISIBLE
         recyclerView.visibility = View.GONE
         emptyViewText.visibility = View.GONE
 
         var locationsLoaded = false
         var typesLoaded = false
-        var eventsLoaded = false
 
-        val onDataComponentLoaded = {
-            // Provjeri jesu li svi podaci učitani
-            if (locationsLoaded && typesLoaded && eventsLoaded) {
-                applyFilters() // applyFilters će sakriti ProgressBar i prikazati listu ili poruku
+        val onSpinnersDataLoaded = {
+            if (locationsLoaded && typesLoaded) {
+                if (userPreferredEventTypeIds.size == 1 && eventTypes.isNotEmpty()) {
+                    val preferredId = userPreferredEventTypeIds.first()
+                    val typeIndex = eventTypes.indexOfFirst { it.first == preferredId }
+                    if (typeIndex != -1 && typeFilterSpinner.adapter != null && typeIndex < typeFilterSpinner.adapter.count) {
+                        val currentListener = typeFilterSpinner.onItemSelectedListener
+                        typeFilterSpinner.onItemSelectedListener = null
+                        typeFilterSpinner.setSelection(typeIndex, false)
+                        typeFilterSpinner.onItemSelectedListener = currentListener
+                    }
+                }
+                loadEventsData()
             }
         }
 
         db.collection("locations").get()
             .addOnSuccessListener { result ->
-                val fetchedLocations = mutableListOf(Pair("", "All Locations"))
+                val fetchedLocations = mutableListOf(Pair("", "All Locations")) //
                 fetchedLocations.addAll(result.map { document ->
                     Pair(document.id, document.getString("name") ?: "")
                 })
                 locations = fetchedLocations
                 val locationAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, locations.map { it.second })
                 locationAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-                locationFilterSpinner.adapter = locationAdapter
+                locationFilterSpinner.adapter = locationAdapter //
             }
             .addOnFailureListener {
                 Toast.makeText(this, "Error loading locations: ${it.message}", Toast.LENGTH_SHORT).show()
             }
             .addOnCompleteListener {
                 locationsLoaded = true
-                onDataComponentLoaded()
+                onSpinnersDataLoaded()
             }
 
         db.collection("event_types").get()
             .addOnSuccessListener { result ->
-                val fetchedTypes = mutableListOf(Pair("", "All Types"))
+                val fetchedTypes = mutableListOf(Pair("", "All Types")) //
                 fetchedTypes.addAll(result.map { document ->
                     Pair(document.id, document.getString("name") ?: "")
                 })
                 eventTypes = fetchedTypes
                 val typeAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, eventTypes.map { it.second })
                 typeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-                typeFilterSpinner.adapter = typeAdapter
+                typeFilterSpinner.adapter = typeAdapter //
             }
             .addOnFailureListener {
                 Toast.makeText(this, "Error loading event types: ${it.message}", Toast.LENGTH_SHORT).show()
             }
             .addOnCompleteListener {
                 typesLoaded = true
-                onDataComponentLoaded()
+                onSpinnersDataLoaded()
             }
+    }
 
+    private fun loadEventsData() {
         db.collection("events").get()
             .addOnSuccessListener { result: QuerySnapshot ->
                 allEvents.clear()
@@ -379,24 +393,23 @@ class WelcomeActivity : AppCompatActivity() {
                     Event(
                         id = document.id,
                         name = document.getString("name") ?: "",
-                        date = document.getString("date") ?: "",
-                        typeId = document.getString("typeId") ?: "",
-                        typeName = document.getString("typeName") ?: "",
-                        locationId = document.getString("locationId") ?: "",
-                        locationName = document.getString("locationName") ?: "",
-                        description = document.getString("description") ?: "",
-                        interestedCount = document.getLong("interestedCount")?.toInt() ?: 0,
-                        isCurrentUserInterested = currentUserInterestedEventIds.contains(document.id)
+                        date = document.getString("date") ?: "", //
+                        typeId = document.getString("typeId") ?: "", //
+                        typeName = document.getString("typeName") ?: "", //
+                        locationId = document.getString("locationId") ?: "", //
+                        locationName = document.getString("locationName") ?: "", //
+                        description = document.getString("description") ?: "", //
+                        interestedCount = document.getLong("interestedCount")?.toInt() ?: 0, //
+                        isCurrentUserInterested = currentUserInterestedEventIds.contains(document.id) //
                     )
                 })
             }
             .addOnFailureListener {
-                Toast.makeText(this, "Error loading events: ${it.message}", Toast.LENGTH_SHORT).show()
-                allEvents.clear() // Osiguraj praznu listu za prikaz poruke o grešci
+                Toast.makeText(this, "Error loading events: ${it.message}", Toast.LENGTH_SHORT).show() //
+                allEvents.clear()
             }
             .addOnCompleteListener {
-                eventsLoaded = true
-                onDataComponentLoaded()
+                applyFilters()
             }
     }
 
@@ -407,36 +420,37 @@ class WelcomeActivity : AppCompatActivity() {
             }
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
-        locationFilterSpinner.onItemSelectedListener = filterListener
-        typeFilterSpinner.onItemSelectedListener = filterListener
+        locationFilterSpinner.onItemSelectedListener = filterListener //
+        typeFilterSpinner.onItemSelectedListener = filterListener //
     }
 
     private fun applyFilters() {
-        loadingProgressBar.visibility = View.GONE // Sakrij ProgressBar
+        loadingProgressBar.visibility = View.GONE
 
-        var filteredEvents = allEvents.toMutableList()
+        var filteredEvents = allEvents.toMutableList() // Radimo s kopijom
 
-        val currentDate = Calendar.getInstance()
-        currentDate.set(Calendar.HOUR_OF_DAY, 0)
-        currentDate.set(Calendar.MINUTE, 0)
-        currentDate.set(Calendar.SECOND, 0)
-        currentDate.set(Calendar.MILLISECOND, 0)
+        val currentDate = Calendar.getInstance() //
+        currentDate.set(Calendar.HOUR_OF_DAY, 0) //
+        currentDate.set(Calendar.MINUTE, 0) //
+        currentDate.set(Calendar.SECOND, 0) //
+        currentDate.set(Calendar.MILLISECOND, 0) //
 
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()) //
 
         filteredEvents.retainAll { event ->
             try {
-                val eventDateTimeStr = event.date
-                val eventDate: Date? = dateFormat.parse(eventDateTimeStr)
+                val eventDateTimeStr = event.date //
+                val eventDate: Date? = dateFormat.parse(eventDateTimeStr) //
 
                 if(eventDate != null) {
-                    val eventCalendar = Calendar.getInstance()
-                    eventCalendar.time = eventDate
-                    eventCalendar.set(Calendar.HOUR_OF_DAY, 0)
-                    eventCalendar.set(Calendar.MINUTE, 0)
-                    eventCalendar.set(Calendar.SECOND, 0)
-                    eventCalendar.set(Calendar.MILLISECOND, 0)
-                    !eventCalendar.before(currentDate)
+                    val eventCalendar = Calendar.getInstance() //
+                    eventCalendar.time = eventDate //
+                    eventCalendar.set(Calendar.HOUR_OF_DAY, 0) //
+                    eventCalendar.set(Calendar.MINUTE, 0) //
+                    eventCalendar.set(Calendar.SECOND, 0) //
+                    eventCalendar.set(Calendar.MILLISECOND, 0) //
+
+                    !eventCalendar.before(currentDate) // Pokaži ako je danas ili u budućnosti
                 } else {
                     true
                 }
@@ -445,41 +459,48 @@ class WelcomeActivity : AppCompatActivity() {
             }
         }
 
-        val selectedLocationId = locations.getOrNull(locationFilterSpinner.selectedItemPosition)?.first
+        val selectedLocationId = locations.getOrNull(locationFilterSpinner.selectedItemPosition)?.first //
         if (!selectedLocationId.isNullOrEmpty()) {
-            filteredEvents.retainAll { it.locationId == selectedLocationId }
+            filteredEvents.retainAll { it.locationId == selectedLocationId } //
         }
 
-        val selectedTypeId = eventTypes.getOrNull(typeFilterSpinner.selectedItemPosition)?.first
-        if (!selectedTypeId.isNullOrEmpty()) {
-            filteredEvents.retainAll { it.typeId == selectedTypeId }
+        val typeIdFromSpinner = eventTypes.getOrNull(typeFilterSpinner.selectedItemPosition)?.first
+
+        if (userPreferredEventTypeIds.isNotEmpty()) {
+            filteredEvents.retainAll { event -> userPreferredEventTypeIds.contains(event.typeId) }
+            if (!typeIdFromSpinner.isNullOrEmpty()) {
+                filteredEvents.retainAll { event -> event.typeId == typeIdFromSpinner }
+            }
+        } else {
+            if (!typeIdFromSpinner.isNullOrEmpty()) {
+                filteredEvents.retainAll { it.typeId == typeIdFromSpinner } //
+            }
         }
 
-        val searchQuery = eventSearchEditText.text.toString().trim().lowercase(Locale.getDefault())
+        val searchQuery = eventSearchEditText.text.toString().trim().lowercase(Locale.getDefault()) //
         if (searchQuery.isNotEmpty()) {
             filteredEvents.retainAll { event ->
-                event.name.lowercase(Locale.getDefault()).contains(searchQuery) ||
-                        event.description.lowercase(Locale.getDefault()).contains(searchQuery)
+                event.name.lowercase(Locale.getDefault()).contains(searchQuery) || //
+                        event.description.lowercase(Locale.getDefault()).contains(searchQuery) //
             }
         }
 
         try {
-            filteredEvents.sortWith(compareBy { event ->
-                dateFormat.parse(event.date) // Sortiraj po datumu
+            filteredEvents.sortWith(compareBy { event -> //
+                dateFormat.parse(event.date) //
             })
         } catch (e: Exception) {
-            // Logiraj grešku ili je zanemari ako format datuma nije uvijek ispravan
+            // Log error or handle if date parsing fails during sort
         }
 
-
-        eventAdapter.updateEvents(filteredEvents)
+        eventAdapter.updateEvents(filteredEvents) //
 
         if (filteredEvents.isEmpty()) {
             recyclerView.visibility = View.GONE
-            emptyViewText.text = if (allEvents.isEmpty() && !searchQuery.isNotEmpty() && selectedLocationId.isNullOrEmpty() && selectedTypeId.isNullOrEmpty()) {
-                "No events available at the moment." // Ako nema uopće događaja
+            emptyViewText.text = if (allEvents.isEmpty() && !searchQuery.isNotEmpty() && selectedLocationId.isNullOrEmpty() && typeIdFromSpinner.isNullOrEmpty() && userPreferredEventTypeIds.isEmpty()) {
+                "No events available at the moment."
             } else {
-                "No events match your criteria." // Ako filteri nisu dali rezultate
+                "No events match your criteria."
             }
             emptyViewText.visibility = View.VISIBLE
         } else {
@@ -489,49 +510,52 @@ class WelcomeActivity : AppCompatActivity() {
     }
 
     private fun clearFilters() {
-        locationFilterSpinner.setSelection(0)
-        typeFilterSpinner.setSelection(0)
-        eventSearchEditText.text.clear()
+        locationFilterSpinner.setSelection(0) //
+        typeFilterSpinner.setSelection(0) //
+        eventSearchEditText.text.clear() //
+        // applyFilters() će biti automatski pozvan zbog listenera
     }
 
     private fun requestLocationPermission() {
         when {
-            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED -> {
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED -> { //
                 getLastLocation()
             }
-            shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION) -> {
-                Toast.makeText(this, "Location permission is needed to auto-filter by city.", Toast.LENGTH_LONG).show()
-                requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION) -> { //
+                Toast.makeText(this, "Location permission is needed to auto-filter by city.", Toast.LENGTH_LONG).show() //
+                requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION) //
             }
             else -> {
-                requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION) //
             }
         }
     }
 
     private fun getLastLocation() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) { //
             fusedLocationClient.lastLocation
                 .addOnSuccessListener { location ->
                     if (location != null) {
-                        getCityFromLocation(location.latitude, location.longitude)
+                        getCityFromLocation(location.latitude, location.longitude) //
                     }
                 }
         }
     }
 
     private fun getCityFromLocation(latitude: Double, longitude: Double) {
-        val geocoder = Geocoder(this, Locale.getDefault())
+        val geocoder = Geocoder(this, Locale.getDefault()) //
         try {
-            val addresses = geocoder.getFromLocation(latitude, longitude, 1)
+            val addresses = geocoder.getFromLocation(latitude, longitude, 1) //
             if (!addresses.isNullOrEmpty()) {
-                val city = addresses[0].locality
-                // Provjeri postoji li grad "Mostar" u listi lokacija i postavi ga
+                val city = addresses[0].locality //
                 if (city != null) {
                     val cityIndex = locations.indexOfFirst { it.second.equals(city, ignoreCase = true) }
                     if (cityIndex != -1 && cityIndex < locationFilterSpinner.adapter.count) {
-                        locationFilterSpinner.setSelection(cityIndex)
-                        Toast.makeText(this, "Auto-filtered by $city based on your location.", Toast.LENGTH_LONG).show()
+                        // Provjeri da li je korisnik već ručno odabrao lokaciju
+                        if (locationFilterSpinner.selectedItemPosition == 0) { // Ako je "All Locations"
+                            locationFilterSpinner.setSelection(cityIndex)
+                            Toast.makeText(this, "Auto-filtered by $city based on your location.", Toast.LENGTH_LONG).show()
+                        }
                     }
                 }
             }
