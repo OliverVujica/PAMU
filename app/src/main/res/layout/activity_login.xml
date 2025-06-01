@@ -12,13 +12,12 @@
         android:layout_height="wrap_content"
         android:padding="24dp">
 
-        <!-- Logo/App Name Section -->
         <ImageView
             android:id="@+id/app_logo"
-            android:layout_width="80dp"
-            android:layout_height="80dp"
-            android:layout_marginTop="60dp"
-            android:src="@drawable/ic_app_logo"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:layout_marginTop="10dp"
+            android:src="@drawable/logo"
             android:contentDescription="App logo"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -165,7 +164,8 @@
                     android:text="Continue with Google"
                     android:textSize="16sp"
                     android:textColor="#1A1A1A"
-                    app:icon="@drawable/ic_google"
+                    app:icon="@drawable/google_logo"
+                    app:iconSize="20dp"
                     app:iconGravity="textStart"
                     app:iconPadding="12dp"
                     app:cornerRadius="12dp"
